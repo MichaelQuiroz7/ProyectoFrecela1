@@ -1,0 +1,101 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Michael\\Desktop\\FRECELA PROJECT\\FRECELABK\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{FC123003-AC82-466C-AE66-84C6E81A4ABD}|FRECELABK\\FRECELABK.csproj|c:\\users\\michael\\desktop\\frecela project\\frecelabk\\frecelabk\\controllers\\empleadocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FC123003-AC82-466C-AE66-84C6E81A4ABD}|FRECELABK\\FRECELABK.csproj|solutionrelative:frecelabk\\controllers\\empleadocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FC123003-AC82-466C-AE66-84C6E81A4ABD}|FRECELABK\\FRECELABK.csproj|c:\\users\\michael\\desktop\\frecela project\\frecelabk\\frecelabk\\repositorio\\repositorioempleado.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FC123003-AC82-466C-AE66-84C6E81A4ABD}|FRECELABK\\FRECELABK.csproj|solutionrelative:frecelabk\\repositorio\\repositorioempleado.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FC123003-AC82-466C-AE66-84C6E81A4ABD}|FRECELABK\\FRECELABK.csproj|c:\\users\\michael\\desktop\\frecela project\\frecelabk\\frecelabk\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{FC123003-AC82-466C-AE66-84C6E81A4ABD}|FRECELABK\\FRECELABK.csproj|solutionrelative:frecelabk\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FC123003-AC82-466C-AE66-84C6E81A4ABD}|FRECELABK\\FRECELABK.csproj|c:\\users\\michael\\desktop\\frecela project\\frecelabk\\frecelabk\\repositorio\\irepositorioempleado.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FC123003-AC82-466C-AE66-84C6E81A4ABD}|FRECELABK\\FRECELABK.csproj|solutionrelative:frecelabk\\repositorio\\irepositorioempleado.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{FC123003-AC82-466C-AE66-84C6E81A4ABD}|FRECELABK\\FRECELABK.csproj|c:\\users\\michael\\desktop\\frecela project\\frecelabk\\frecelabk\\models\\modelsdto\\empleadodto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{FC123003-AC82-466C-AE66-84C6E81A4ABD}|FRECELABK\\FRECELABK.csproj|solutionrelative:frecelabk\\models\\modelsdto\\empleadodto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "EmpleadoDTO.cs",
+              "DocumentMoniker": "C:\\Users\\Michael\\Desktop\\FRECELA PROJECT\\FRECELABK\\FRECELABK\\Models\\ModelsDTO\\EmpleadoDTO.cs",
+              "RelativeDocumentMoniker": "FRECELABK\\Models\\ModelsDTO\\EmpleadoDTO.cs",
+              "ToolTip": "C:\\Users\\Michael\\Desktop\\FRECELA PROJECT\\FRECELABK\\FRECELABK\\Models\\ModelsDTO\\EmpleadoDTO.cs",
+              "RelativeToolTip": "FRECELABK\\Models\\ModelsDTO\\EmpleadoDTO.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-27T06:58:11.29Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "EmpleadoController.cs",
+              "DocumentMoniker": "C:\\Users\\Michael\\Desktop\\FRECELA PROJECT\\FRECELABK\\FRECELABK\\Controllers\\EmpleadoController.cs",
+              "RelativeDocumentMoniker": "FRECELABK\\Controllers\\EmpleadoController.cs",
+              "ToolTip": "C:\\Users\\Michael\\Desktop\\FRECELA PROJECT\\FRECELABK\\FRECELABK\\Controllers\\EmpleadoController.cs",
+              "RelativeToolTip": "FRECELABK\\Controllers\\EmpleadoController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACMAAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-27T04:17:30.809Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "RepositorioEmpleado.cs",
+              "DocumentMoniker": "C:\\Users\\Michael\\Desktop\\FRECELA PROJECT\\FRECELABK\\FRECELABK\\Repositorio\\RepositorioEmpleado.cs",
+              "RelativeDocumentMoniker": "FRECELABK\\Repositorio\\RepositorioEmpleado.cs",
+              "ToolTip": "C:\\Users\\Michael\\Desktop\\FRECELA PROJECT\\FRECELABK\\FRECELABK\\Repositorio\\RepositorioEmpleado.cs",
+              "RelativeToolTip": "FRECELABK\\Repositorio\\RepositorioEmpleado.cs",
+              "ViewState": "AgIAABwAAAAAAAAAAAAowCcAAAAgAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-27T05:47:16.137Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "IRepositorioEmpleado.cs",
+              "DocumentMoniker": "C:\\Users\\Michael\\Desktop\\FRECELA PROJECT\\FRECELABK\\FRECELABK\\Repositorio\\IRepositorioEmpleado.cs",
+              "RelativeDocumentMoniker": "FRECELABK\\Repositorio\\IRepositorioEmpleado.cs",
+              "ToolTip": "C:\\Users\\Michael\\Desktop\\FRECELA PROJECT\\FRECELABK\\FRECELABK\\Repositorio\\IRepositorioEmpleado.cs",
+              "RelativeToolTip": "FRECELABK\\Repositorio\\IRepositorioEmpleado.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAABGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-27T05:46:13.127Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\Michael\\Desktop\\FRECELA PROJECT\\FRECELABK\\FRECELABK\\appsettings.json",
+              "RelativeDocumentMoniker": "FRECELABK\\appsettings.json",
+              "ToolTip": "C:\\Users\\Michael\\Desktop\\FRECELA PROJECT\\FRECELABK\\FRECELABK\\appsettings.json",
+              "RelativeToolTip": "FRECELABK\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAA6AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-04-27T00:37:21.995Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

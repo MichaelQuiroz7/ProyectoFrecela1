@@ -1,0 +1,8 @@
+bin/
+obj/
+# Archivos de configuración local
+appsettings.Development.json
+# Archivos de Visual Studio
+FRECELABK.csproj.user
+Properties/launchSettings.json
+FRECELABK.http
