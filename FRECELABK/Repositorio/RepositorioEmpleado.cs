@@ -26,7 +26,7 @@ namespace FRECELABK.Repositorio
                 try
                 {
                     await connection.OpenAsync();
-                    string query = "SELECT nombres, apellidos, genero, fecha_nacimiento, foto FROM empleado WHERE id_rol != 1";
+                    string query = "SELECT nombres, apellidos, genero, fecha_nacimiento, foto, telefono FROM empleado WHERE id_rol != 1";
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
                         using (MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync())
@@ -43,7 +43,8 @@ namespace FRECELABK.Repositorio
                                     Apellidos = reader.GetString(reader.GetOrdinal("apellidos")),
                                     Genero = reader.GetString(reader.GetOrdinal("genero")),
                                     Edad = edad,
-                                    Foto = reader.IsDBNull(reader.GetOrdinal("foto")) ? null : (byte[])reader["foto"]
+                                    Foto = reader.IsDBNull(reader.GetOrdinal("foto")) ? null : reader.GetString("foto"),
+                                    Telefono = reader.IsDBNull(reader.GetOrdinal("telefono")) ? null : reader.GetString("telefono")
                                 };
                                 empleados.Add(empleado);
                             }

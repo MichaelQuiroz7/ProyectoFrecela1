@@ -17,8 +17,8 @@ public partial class Imagen
     [Column("id_producto")]
     public int IdProducto { get; set; }
 
-    [Column("imagen", TypeName = "blob")]
-    public byte[] Imagen1 { get; set; } = null!;
+    [Column("imagen")]
+    public string ImagenUrl { get; set; } = null!;
 
     [ForeignKey("IdProducto")]
     [InverseProperty("Imagens")]

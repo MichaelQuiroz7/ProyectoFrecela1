@@ -24,6 +24,9 @@ builder.Services.AddScoped<IRepositorioProducto, RepositorioProducto>();
 // Registro el repositorio de empleado
 builder.Services.AddScoped<IRepositorioEmpleado, RepositorioEmpleado>();
 
+// Registro el repositorio de empleado
+builder.Services.AddScoped<IRepositorioImagen, RepositorioImagen>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -6,6 +6,7 @@
         public string Apellidos { get; set; }
         public string Genero { get; set; }
         public int Edad { get; set; } 
-        public byte[]? Foto { get; set; }
+        public string Foto { get; set; }
+        public string Telefono { get; set; }
     }
 }
