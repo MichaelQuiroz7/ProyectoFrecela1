@@ -7,8 +7,8 @@ using Microsoft.EntityFrameworkCore;
 namespace FRECELABK.Models;
 
 [Table("empleado")]
-[Index("Cedula", Name = "cedula", IsUnique = true)]
-[Index("IdRol", Name = "id_rol")]
+[Index("cedula", Name = "cedula", IsUnique = true)]
+[Index("id_rol", Name = "id_rol")]
 public partial class Empleado
 {
     [Key]
@@ -17,25 +17,35 @@ public partial class Empleado
 
     [Column("nombres")]
     [StringLength(100)]
+    [Required]
     public string Nombres { get; set; } = null!;
 
     [Column("apellidos")]
     [StringLength(100)]
+    [Required]
     public string Apellidos { get; set; } = null!;
 
     [Column("cedula")]
     [StringLength(20)]
+    [Required]
     public string Cedula { get; set; } = null!;
 
     [Column("fecha_nacimiento")]
-    public DateTime FechaNacimiento { get; set; }
+    [Required]
+    public DateOnly FechaNacimiento { get; set; }
 
     [Column("genero")]
     [StringLength(50)]
+    [Required]
     public string Genero { get; set; } = null!;
 
-    [Column("foto", TypeName = "blob")]
-    public byte[]? Foto { get; set; }
+    [Column("telefono")]
+    [StringLength(10)]
+    public string? Telefono { get; set; }
+
+    [Column("contrasenia")]
+    [StringLength(10)]
+    public string? Contrasenia { get; set; }
 
     [Column("id_rol")]
     public int IdRol { get; set; }

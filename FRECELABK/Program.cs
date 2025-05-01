@@ -24,8 +24,11 @@ builder.Services.AddScoped<IRepositorioProducto, RepositorioProducto>();
 // Registro el repositorio de empleado
 builder.Services.AddScoped<IRepositorioEmpleado, RepositorioEmpleado>();
 
-// Registro el repositorio de empleado
+// Registro el repositorio de Imagen
 builder.Services.AddScoped<IRepositorioImagen, RepositorioImagen>();
+
+// Registro el repositorio de Alerta
+builder.Services.AddScoped<IRepositorioAlerta, RepositorioAlerta>();
 
 var app = builder.Build();
 

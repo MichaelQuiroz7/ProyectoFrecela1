@@ -6,7 +6,7 @@ namespace FRECELABK.Repositorio
     {
 
         Task<ResponseModel> ObtenerEmpleados();
-        Task<ResponseModel> ObtenerIdRolPorIdEmpleado(int idEmpleado);
+        Task<ResponseModel> ValidarCredenciales(string cedula, string contrasenia);
 
     }
 }

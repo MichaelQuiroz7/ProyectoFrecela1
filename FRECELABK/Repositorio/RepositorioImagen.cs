@@ -163,5 +163,51 @@ namespace FRECELABK.Repositorio
 
         #endregion
 
+
+        #region Obtener Imagenes por Producto
+
+        public async Task<ResponseModel> ObtenerImagenesPorProducto(int idProducto)
+        {
+            ResponseModel response = new ResponseModel();
+            List<Imagen> imagenes = new List<Imagen>();
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+                    string query = "SELECT id_imagen, id_producto, imagen FROM imagen WHERE id_producto = @idProducto";
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@idProducto", idProducto);
+                        using (MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                Imagen imagen = new Imagen
+                                {
+                                    IdImagen = reader.GetInt32("id_imagen"),
+                                    IdProducto = reader.GetInt32("id_producto"),
+                                    ImagenUrl = reader.GetString("imagen")
+                                };
+                                imagenes.Add(imagen);
+                            }
+                        }
+                    }
+                    response.Message = imagenes.Count > 0 ? "Imágenes obtenidas correctamente" : "No se encontraron imágenes para este producto";
+                    response.Code = ResponseType.Success;
+                    response.Data = imagenes;
+                }
+                catch (Exception ex)
+                {
+                    response.Data = null;
+                    response.Code = ResponseType.Error;
+                    response.Message = ex.Message;
+                }
+            }
+            return response;
+        }
+
+        #endregion
+
     }
 }

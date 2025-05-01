@@ -1,6 +1,7 @@
 ﻿using FRECELABK.Models;
 using FRECELABK.Repositorio;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,16 +31,34 @@ namespace FRECELABK.Controllers
         }
 
 
-        [HttpGet("rol/{id}")]
-        public async Task<ActionResult<ResponseModel>> GetIdRol(int id)
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            var response = await _repository.ObtenerIdRolPorIdEmpleado(id);
-            if (response.Code == ResponseType.Success)
+            if (request == null || string.IsNullOrEmpty(request.Cedula) || string.IsNullOrEmpty(request.Contrasenia))
             {
-                return Ok(response);
+                return BadRequest(new { message = "Cédula y contraseña son requeridas" });
             }
-            return StatusCode(500, response);
-        }
 
+            var response = await _repository.ValidarCredenciales(request.Cedula, request.Contrasenia);
+
+            if (response.Code == ResponseType.Error)
+            {
+                return Unauthorized(new { message = response.Message });
+            }
+
+            return Ok(new
+            {
+                message = response.Message,
+                data = response.Data
+            });
+        }
     }
+
+    public class LoginRequest
+    {
+        public string Cedula { get; set; } = null!;
+        public string Contrasenia { get; set; } = null!;
+    }
+
 }
+

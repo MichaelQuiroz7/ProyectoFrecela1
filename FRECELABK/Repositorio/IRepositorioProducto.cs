@@ -10,6 +10,7 @@ namespace FRECELABK.Repositorio
         Task<ResponseModel> EditarProducto(int idProducto, Producto producto);
         Task<ResponseModel> ModificarStock(int idProducto, int cantidad, bool aumentar);
         Task<ResponseModel> EliminarProducto(int idProducto, int idUsuario);
+        Task<ResponseModel> ObtenerStockPorProducto(int idProducto);
 
     }
 }

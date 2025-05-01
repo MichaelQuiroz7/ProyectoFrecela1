@@ -21,12 +21,13 @@ namespace FRECELABK.Repositorio
         {
             ResponseModel response = new ResponseModel();
             List<EmpleadoDTO> empleados = new List<EmpleadoDTO>();
+
             using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
             {
                 try
                 {
                     await connection.OpenAsync();
-                    string query = "SELECT nombres, apellidos, genero, fecha_nacimiento, foto, telefono FROM empleado WHERE id_rol != 1";
+                    string query = "SELECT id_empleado, nombres, apellidos, cedula, fecha_nacimiento, genero, id_rol, telefono, contrasenia FROM empleado";
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
                         using (MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync())
@@ -43,8 +44,7 @@ namespace FRECELABK.Repositorio
                                     Apellidos = reader.GetString(reader.GetOrdinal("apellidos")),
                                     Genero = reader.GetString(reader.GetOrdinal("genero")),
                                     Edad = edad,
-                                    Foto = reader.IsDBNull(reader.GetOrdinal("foto")) ? null : reader.GetString("foto"),
-                                    Telefono = reader.IsDBNull(reader.GetOrdinal("telefono")) ? null : reader.GetString("telefono")
+                                    Telefono = reader.GetString(reader.GetOrdinal("telefono"))
                                 };
                                 empleados.Add(empleado);
                             }
@@ -66,7 +66,9 @@ namespace FRECELABK.Repositorio
 
         #endregion
 
-        public async Task<ResponseModel> ObtenerIdRolPorIdEmpleado(int idEmpleado)
+        #region Validar Credenciales de acceso
+
+        public async Task<ResponseModel> ValidarCredenciales(string cedula, string contrasenia)
         {
             ResponseModel response = new ResponseModel();
             using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
@@ -74,24 +76,59 @@ namespace FRECELABK.Repositorio
                 try
                 {
                     await connection.OpenAsync();
-                    string query = "SELECT id_rol FROM empleado WHERE id_empleado = @idEmpleado";
+                    string query = @"
+                    SELECT e.id_empleado, e.nombres, e.apellidos, e.cedula, e.fecha_nacimiento, e.genero, e.id_rol, e.telefono, e.contrasenia, r.nombre_rol
+                    FROM empleado e
+                    JOIN rol r ON e.id_rol = r.id_rol
+                    WHERE e.cedula = @cedula";
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
-                        command.Parameters.AddWithValue("@idEmpleado", idEmpleado);
+                        command.Parameters.AddWithValue("@cedula", cedula);
 
-                        var result = await command.ExecuteScalarAsync();
-                        if (result != null)
+                        using (MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync())
                         {
-                            int idRol = Convert.ToInt32(result);
-                            response.Message = "ID del rol obtenido correctamente";
-                            response.Code = ResponseType.Success;
-                            response.Data = idRol;
-                        }
-                        else
-                        {
-                            response.Message = "Empleado no encontrado";
-                            response.Code = ResponseType.Error;
-                            response.Data = null;
+                            if (await reader.ReadAsync())
+                            {
+                                Empleado empleado = new Empleado
+                                {
+                                    IdEmpleado = reader.GetInt32("id_empleado"),
+                                    Nombres = reader.GetString("nombres"),
+                                    Apellidos = reader.GetString("apellidos"),
+                                    Cedula = reader.GetString("cedula"),
+                                    FechaNacimiento = DateOnly.FromDateTime(reader.GetDateTime("fecha_nacimiento")),
+                                    Genero = reader.GetString("genero"),
+                                    IdRol = reader.GetInt32("id_rol"),
+                                    Telefono = reader.IsDBNull(reader.GetOrdinal("telefono")) ? null : reader.GetString("telefono"),
+                                    Contrasenia = reader.IsDBNull(reader.GetOrdinal("contrasenia")) ? null : reader.GetString("contrasenia")
+                                };
+         
+                                 if (empleado.Contrasenia != contrasenia)
+                                {
+                                    response.Message = "Contraseña incorrecta";
+                                    response.Code = ResponseType.Error;
+                                    response.Data = null;
+                                }
+                                else
+                                {
+                                    // Credenciales válidas
+                                    response.Message = "Inicio de sesión exitoso";
+                                    response.Code = ResponseType.Success;
+                                    response.Data = new
+                                    {
+                                        empleado.IdEmpleado,
+                                        empleado.Nombres,
+                                        empleado.Apellidos,
+                                        empleado.Cedula,
+                                        empleado.IdRol
+                                    };
+                                }
+                            }
+                            else
+                            {
+                                response.Message = "Cédula no encontrada";
+                                response.Code = ResponseType.Error;
+                                response.Data = null;
+                            }
                         }
                     }
                 }
@@ -104,6 +141,8 @@ namespace FRECELABK.Repositorio
             }
             return response;
         }
+
+        #endregion
 
 
     }
