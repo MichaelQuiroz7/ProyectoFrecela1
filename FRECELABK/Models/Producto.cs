@@ -38,14 +38,6 @@ public partial class Producto
     [Required]
     public int IdTipoSubproducto { get; set; }
 
-    [ForeignKey("IdTipoProducto")]
-    [InverseProperty("Productos")]
-    public virtual TipoProducto IdTipoProductoNavigation { get; set; } = null!;
-
-    [ForeignKey("IdTipoSubproducto")]
-    [InverseProperty("Productos")]
-    public virtual TipoSubproducto IdTipoSubproductoNavigation { get; set; } = null!;
-
     [InverseProperty("IdProductoNavigation")]
     public virtual ICollection<Imagen> Imagens { get; set; } = new List<Imagen>();
 

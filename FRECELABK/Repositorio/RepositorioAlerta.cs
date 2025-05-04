@@ -100,8 +100,6 @@ namespace FRECELABK.Repositorio
 
 
         #region Cambiar Estado Alerta
-
-        #region Cambiar Estado Alerta
         public async Task<ResponseModel> CambiarEstadoAlerta(int idProducto, string nombreProducto, string mensaje)
         {
             ResponseModel response = new ResponseModel();
@@ -174,7 +172,6 @@ namespace FRECELABK.Repositorio
         }
         #endregion
 
-        #endregion
 
     }
 }

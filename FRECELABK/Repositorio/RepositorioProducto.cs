@@ -50,17 +50,7 @@ namespace FRECELABK.Repositorio
                                     Descripcion = reader.IsDBNull(reader.GetOrdinal("descripcion")) ? null : reader.GetString("descripcion"),
                                     Stock = reader.GetInt32("stock"),
                                     IdTipoProducto = reader.GetInt32("id_tipo_producto"),
-                                    IdTipoSubproducto = reader.GetInt32("id_tipo_subproducto"),
-                                    IdTipoProductoNavigation = new TipoProducto
-                                    {
-                                        IdTipoProducto = reader.GetInt32("id_tipo_producto"),
-                                        NombreTipo = reader.GetString("nombre_tipo")
-                                    },
-                                    IdTipoSubproductoNavigation = new TipoSubproducto
-                                    {
-                                        IdTipoSubproducto = reader.GetInt32("id_tipo_subproducto"),
-                                        NombreSubtipo = reader.GetString("nombre_subtipo")
-                                    }
+                                    IdTipoSubproducto = reader.GetInt32("id_tipo_subproducto")
                                 };
                                 productos.Add(producto);
                             }
