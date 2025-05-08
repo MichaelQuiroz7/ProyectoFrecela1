@@ -34,23 +34,9 @@ namespace FRECELABK.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            if (request == null || string.IsNullOrEmpty(request.Cedula) || string.IsNullOrEmpty(request.Contrasenia))
-            {
-                return BadRequest(new { message = "Cédula y contraseña son requeridas" });
-            }
 
-            var response = await _repository.ValidarCredenciales(request.Cedula, request.Contrasenia);
-
-            if (response.Code == ResponseType.Error)
-            {
-                return Unauthorized(new { message = response.Message });
-            }
-
-            return Ok(new
-            {
-                message = response.Message,
-                data = response.Data
-            });
+            ResponseModel response = await _repository.ValidarCredenciales(request.Cedula, request.Contrasenia);
+            return Ok(response);
         }
     }
 
