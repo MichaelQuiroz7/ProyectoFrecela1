@@ -22,12 +22,10 @@ namespace FRECELABK.Controllers
         [HttpGet]
         public async Task<ActionResult<ResponseModel>> GetEmpleados()
         {
-            var response = await _repository.ObtenerEmpleados();
-            if (response.Code == ResponseType.Success)
-            {
-                return Ok(response);
-            }
-            return StatusCode(500, response);
+            ResponseModel response = await _repository.ObtenerEmpleados();
+
+            return Ok(response);
+
         }
 
 
