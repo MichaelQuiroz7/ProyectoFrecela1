@@ -42,6 +42,7 @@ namespace FRECELABK.Controllers
                 return Ok(response);
         }
 
+       // [Route("ModificarStock")]
         [HttpPatch("{id}/stock")]
         public async Task<ActionResult<ResponseModel>> ModificarStock(int id, [FromQuery] bool aumentar, [FromQuery] int cantidad)
         {

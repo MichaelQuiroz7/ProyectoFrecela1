@@ -30,6 +30,12 @@ builder.Services.AddScoped<IRepositorioImagen, RepositorioImagen>();
 // Registro el repositorio de Alerta
 builder.Services.AddScoped<IRepositorioAlerta, RepositorioAlerta>();
 
+// Registro el repositorio de Rol
+builder.Services.AddScoped<IRepositorioRol, RepositorioRol>();
+
+// Registro el repositorio de Tipos y subtipos de producto
+builder.Services.AddScoped<IRepositorioTiposProduct, RepositorioTiposProducto>();
+
 //Add Cors
 builder.Services.AddCors(options => options.AddPolicy("AllowWebApp",
     builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
