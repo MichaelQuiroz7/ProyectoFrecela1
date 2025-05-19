@@ -1,4 +1,5 @@
 ﻿using FRECELABK.Models;
+using FRECELABK.Models.ModelsDTO;
 using MySql.Data.MySqlClient;
 
 namespace FRECELABK.Repositorio
@@ -119,7 +120,7 @@ namespace FRECELABK.Repositorio
 
         #region Agregar Producto
 
-        public async Task<ResponseModel> AgregarProducto(Producto producto)
+        public async Task<ResponseModel> AgregarProducto(ProductoDTO producto)
         {
             ResponseModel response = new ResponseModel();
             using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
@@ -127,26 +128,38 @@ namespace FRECELABK.Repositorio
                 try
                 {
                     await connection.OpenAsync();
+                    int idProducto;
                     string query = @"
-                    INSERT INTO producto (nombre, precio, descripcion, stock, id_tipo_producto, id_tipo_subproducto) 
-                    VALUES (@nombre, @precio, @descripcion, @stock, @idTipoProducto, @idTipoSubproducto); 
-                    SELECT LAST_INSERT_ID();";
+                        INSERT INTO producto (nombre, precio, descripcion, stock, id_tipo_producto, id_tipo_subproducto) 
+                        VALUES (@nombre, @precio, @descripcion, @stock, @idTipoProducto, @idTipoSubproducto);
+                        SELECT LAST_INSERT_ID();";
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@nombre", producto.Nombre);
                         command.Parameters.AddWithValue("@precio", producto.Precio);
-                        command.Parameters.AddWithValue("@descripcion", producto.Descripcion as object ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@descripcion", producto.Descripcion ?? (object)DBNull.Value);
                         command.Parameters.AddWithValue("@stock", producto.Stock);
                         command.Parameters.AddWithValue("@idTipoProducto", producto.IdTipoProducto);
                         command.Parameters.AddWithValue("@idTipoSubproducto", producto.IdTipoSubproducto);
 
-                        int idProducto = Convert.ToInt32(await command.ExecuteScalarAsync());
-                        producto.IdProducto = idProducto;
+                        idProducto = Convert.ToInt32(await command.ExecuteScalarAsync());
+
+                        var productoCreado = new Producto
+                        {
+                            IdProducto = idProducto,
+                            Nombre = producto.Nombre,
+                            Precio = producto.Precio,
+                            Descripcion = producto.Descripcion,
+                            Stock = producto.Stock,
+                            IdTipoProducto = producto.IdTipoProducto,
+                            IdTipoSubproducto = producto.IdTipoSubproducto
+                        };
 
                         response.Message = "Producto agregado correctamente";
                         response.Code = ResponseType.Success;
-                        response.Data = producto;
-                    }
+                        response.Data = productoCreado;
+                    
+                }
                 }
                 catch (Exception ex)
                 {
@@ -164,9 +177,8 @@ namespace FRECELABK.Repositorio
 
         #region Editar Producto
 
-        public async Task<ResponseModel> EditarProducto(int idProducto, Producto producto)
+        public async Task<ResponseModel> EditarProducto(int idProducto, ProductoDTO producto)
         {
-            ResponseModel response = new ResponseModel();
             using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
             {
                 try
@@ -218,7 +230,7 @@ namespace FRECELABK.Repositorio
 
         #region Modificar Stock
 
-        public async Task<ResponseModel> ModificarStock(int idProducto, int cantidad, bool aumentar)
+        public async Task<ResponseModel> ModificarStock(ProductoStock producto)
         {
             ResponseModel response = new ResponseModel();
             using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
@@ -232,7 +244,7 @@ namespace FRECELABK.Repositorio
                     string nombreProducto;
                     using (MySqlCommand selectCommand = new MySqlCommand(selectQuery, connection))
                     {
-                        selectCommand.Parameters.AddWithValue("@idProducto", idProducto);
+                        selectCommand.Parameters.AddWithValue("@idProducto", producto.IdProducto);
                         using (MySqlDataReader reader = (MySqlDataReader)await selectCommand.ExecuteReaderAsync())
                         {
                             if (await reader.ReadAsync())
@@ -251,7 +263,7 @@ namespace FRECELABK.Repositorio
                     }
 
                     // Calcular el nuevo stock
-                    int nuevoStock = aumentar ? stockActual + cantidad : stockActual - cantidad;
+                    int nuevoStock = producto.aumentar ? stockActual + producto.cantidad : stockActual - producto.cantidad;
                     if (nuevoStock < 0)
                     {
                         response.Message = "El stock no puede ser negativo";
@@ -265,7 +277,7 @@ namespace FRECELABK.Repositorio
                     using (MySqlCommand updateCommand = new MySqlCommand(updateQuery, connection))
                     {
                         updateCommand.Parameters.AddWithValue("@nuevoStock", nuevoStock);
-                        updateCommand.Parameters.AddWithValue("@idProducto", idProducto);
+                        updateCommand.Parameters.AddWithValue("@idProducto", producto.IdProducto);
 
                         int rowsAffected = await updateCommand.ExecuteNonQueryAsync();
                         if (rowsAffected > 0)
@@ -278,17 +290,17 @@ namespace FRECELABK.Repositorio
                             if (nuevoStock <= UMBRAL_STOCK_BAJO)
                             {
                                 // Si el stock está por debajo del umbral, activar o crear una alerta
-                                await _repository.CambiarEstadoAlerta(idProducto, nombreProducto, mensajeAlerta);
+                                await _repository.CambiarEstadoAlerta(producto.IdProducto, nombreProducto, mensajeAlerta);
                             }
                             else
                             {
                                 // Si el stock está por encima del umbral, desactivar la alerta si existe
-                                await _repository.CambiarEstadoAlerta(idProducto, nombreProducto, mensajeAlerta);
+                                await _repository.CambiarEstadoAlerta(producto.IdProducto, nombreProducto, mensajeAlerta);
                             }
 
-                            response.Message = aumentar ? "Stock aumentado correctamente" : "Stock disminuido correctamente";
+                            response.Message = producto.aumentar ? "Stock aumentado correctamente" : "Stock disminuido correctamente";
                             response.Code = ResponseType.Success;
-                            response.Data = new { IdProducto = idProducto, NuevoStock = nuevoStock };
+                            response.Data = new { IdProducto = producto.IdProducto, NuevoStock = nuevoStock };
                         }
                         else
                         {

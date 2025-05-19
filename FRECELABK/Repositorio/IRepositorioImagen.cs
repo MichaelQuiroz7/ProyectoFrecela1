@@ -7,7 +7,7 @@ namespace FRECELABK.Repositorio
     {
         Task<ResponseModel> ObtenerImagenes();
         Task<ResponseModel> ObtenerImagenesPorProducto(int idProducto);
-        Task<ResponseModel> AgregarImagen(Imagen imagen);
+        Task<ResponseModel> AgregarImagen(int idProducto, string image);
         Task<ResponseModel> EliminarImagen(int idImagen);
     }
 }

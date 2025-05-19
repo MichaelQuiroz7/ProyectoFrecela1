@@ -1,7 +1,10 @@
 ﻿using FRECELABK.Models;
+using FRECELABK.Models.ModelsDTO;
 using FRECELABK.Repositorio;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MySql.Data.MySqlClient;
+using System.Threading.Tasks;
 
 namespace FRECELABK.Controllers
 {
@@ -12,7 +15,7 @@ namespace FRECELABK.Controllers
 
         private readonly IRepositorioImagen _repository;
 
-        public ImagenController(IRepositorioImagen repositorioImagen)
+        public ImagenController(IRepositorioImagen repositorioImagen, IConfiguration conf)
         {
             _repository = repositorioImagen;
         }
@@ -29,15 +32,41 @@ namespace FRECELABK.Controllers
         }
 
 
-        [HttpPost]
-        public async Task<ActionResult<ResponseModel>> PostImagen(Imagen imagen)
+        [HttpPost("SubirImagen")]
+        public async Task<IActionResult> SubirImagen([FromForm] UploadImagenRequest request)
         {
-            var response = await _repository.AgregarImagen(imagen);
-            if (response.Code == ResponseType.Success)
+            if (request.Imagen == null || request.Imagen.Length == 0)
             {
-                return Ok(response);
+                return BadRequest("No se recibió ninguna imagen.");
             }
-            return StatusCode(500, response);
+
+            var nombreArchivo = $"{Guid.NewGuid()}_{Path.GetFileName(request.Imagen.FileName)}";
+            var rutaCarpeta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+
+            if (!Directory.Exists(rutaCarpeta))
+            {
+                Directory.CreateDirectory(rutaCarpeta);
+            }
+
+            var rutaCompleta = Path.Combine(rutaCarpeta, nombreArchivo);
+
+            using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+            {
+                await request.Imagen.CopyToAsync(stream);
+            }
+
+            var urlImagen = $"{Request.Scheme}://{Request.Host}/uploads/{nombreArchivo}";
+
+            var resultado = await _repository.AgregarImagen(request.IdProducto, urlImagen);
+
+
+                return Ok(new
+                {
+                    mensaje = "Imagen subida y registrada correctamente",
+                    data = resultado.Data
+                });
+           
+
         }
 
 

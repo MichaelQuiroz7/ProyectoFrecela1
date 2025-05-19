@@ -8,10 +8,23 @@ namespace FRECELABK.Repositorio
     {
 
         private readonly string? cadenaConexion;
+        private readonly string _assetsPath = @"C:\Users\Michael\Desktop\FRECELA PROJECT\FRECELAFRONT\src\assets"; // Ruta de la carpeta assets
 
         public RepositorioImagen(IConfiguration conf)
         {
             cadenaConexion = conf.GetConnectionString("Conexion");
+            try
+            {
+                if (!Directory.Exists(_assetsPath))
+                {
+                    Directory.CreateDirectory(_assetsPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creando carpeta assets: {ex.Message}");
+            }
+
         }
 
         #region Obtener Imagenes
@@ -62,20 +75,22 @@ namespace FRECELABK.Repositorio
 
         #region Agregar Imagen
 
-        public async Task<ResponseModel> AgregarImagen(Imagen imagen)
+        public async Task<ResponseModel> AgregarImagen(int idProducto, string image)
         {
             ResponseModel response = new ResponseModel();
 
-            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            try
             {
-                try
+
+                // 3. Insertar en la base de datos
+                using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
                 {
                     await connection.OpenAsync();
                     string query = "INSERT INTO imagen (id_producto, imagen) VALUES (@idProducto, @imagen); SELECT LAST_INSERT_ID();";
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
-                        command.Parameters.AddWithValue("@idProducto", imagen.IdProducto);
-                        command.Parameters.AddWithValue("@imagen", imagen.ImagenUrl ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@idProducto", idProducto);
+                        command.Parameters.AddWithValue("@imagen", image);
 
                         var result = await command.ExecuteScalarAsync();
                         int idImagen = Convert.ToInt32(result);
@@ -85,18 +100,18 @@ namespace FRECELABK.Repositorio
                         response.Data = new Imagen
                         {
                             IdImagen = idImagen,
-                            IdProducto = imagen.IdProducto,
-                            ImagenUrl = imagen.ImagenUrl
+                            IdProducto = idProducto,
+                            ImagenUrl = image
                         };
                     }
                 }
-                catch (Exception ex)
-                {
-                    response.Data = null;
-                    response.Code = ResponseType.Error;
-                    response.Message = ex.Message;
-                }
             }
+            catch (Exception ex)
+            {
+                response.Message = "Error: " + ex.Message;
+                response.Code = ResponseType.Error;
+            }
+
             return response;
         }
 
