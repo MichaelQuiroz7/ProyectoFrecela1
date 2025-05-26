@@ -8,22 +8,11 @@ namespace FRECELABK.Repositorio
     {
 
         private readonly string? cadenaConexion;
-        private readonly string _assetsPath = @"C:\Users\Michael\Desktop\FRECELA PROJECT\FRECELAFRONT\src\assets"; // Ruta de la carpeta assets
 
         public RepositorioImagen(IConfiguration conf)
         {
+
             cadenaConexion = conf.GetConnectionString("Conexion");
-            try
-            {
-                if (!Directory.Exists(_assetsPath))
-                {
-                    Directory.CreateDirectory(_assetsPath);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error creando carpeta assets: {ex.Message}");
-            }
 
         }
 

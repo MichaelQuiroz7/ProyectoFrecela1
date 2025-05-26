@@ -81,5 +81,17 @@ namespace FRECELABK.Controllers
             return StatusCode(500, response);
         }
 
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ResponseModel>> GetImagenProducto(int id)
+        {
+            ResponseModel response = await _repository.ObtenerImagenesPorProducto(id);
+            if (response.Code == ResponseType.Success)
+            {
+                return Ok(response);
+            }
+            return StatusCode(500, response);
+        }
+
     }
 }
