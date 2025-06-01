@@ -33,7 +33,7 @@ namespace FRECELABK.Controllers
 
 
         [HttpPost("SubirImagen")]
-        public async Task<IActionResult> SubirImagen([FromForm] UploadImagenRequest request)
+        public async Task<IActionResult> SubirImagen([FromForm] UploadImagenRequest1 request)
         {
             if (request.Imagen == null || request.Imagen.Length == 0)
             {
@@ -60,14 +60,63 @@ namespace FRECELABK.Controllers
             var resultado = await _repository.AgregarImagen(request.IdProducto, urlImagen);
 
 
-                return Ok(new
-                {
-                    mensaje = "Imagen subida y registrada correctamente",
-                    data = resultado.Data
-                });
-           
+            return Ok(new
+            {
+                mensaje = "Imagen subida y registrada correctamente",
+                data = resultado.Data
+            });
+
 
         }
+
+
+        [HttpPost("SubirImagenes")]
+        public async Task<IActionResult> SubirImagenes([FromForm] UploadImagenRequest request)
+        {
+            if (request.Imagenes == null || !request.Imagenes.Any())
+            {
+                return BadRequest("No se recibieron imágenes.");
+            }
+
+            var rutaCarpeta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            if (!Directory.Exists(rutaCarpeta))
+            {
+                Directory.CreateDirectory(rutaCarpeta);
+            }
+
+            var resultados = new List<object>();
+            foreach (var imagen in request.Imagenes)
+            {
+                if (imagen == null || imagen.Length == 0)
+                {
+                    continue; // Skip invalid images
+                }
+
+                var nombreArchivo = $"{Guid.NewGuid()}_{Path.GetFileName(imagen.FileName)}";
+                var rutaCompleta = Path.Combine(rutaCarpeta, nombreArchivo);
+
+                using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+                {
+                    await imagen.CopyToAsync(stream);
+                }
+
+                var urlImagen = $"{Request.Scheme}://{Request.Host}/uploads/{nombreArchivo}";
+                var resultado = await _repository.AgregarImagenes(request.IdProducto, urlImagen);
+                resultados.Add(resultado.Data);
+            }
+
+            if (!resultados.Any())
+            {
+                return BadRequest("Ninguna imagen válida fue procesada.");
+            }
+
+            return Ok(new
+            {
+                mensaje = "Imágenes subidas y registradas correctamente",
+                data = resultados
+            });
+        }
+
 
 
         [HttpDelete("{id}")]

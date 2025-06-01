@@ -70,8 +70,44 @@ namespace FRECELABK.Repositorio
 
             try
             {
+                using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+                {
+                    await connection.OpenAsync();
+                    string query = "INSERT INTO imagen (id_producto, imagen) VALUES (@idProducto, @imagen); SELECT LAST_INSERT_ID();";
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@idProducto", idProducto);
+                        command.Parameters.AddWithValue("@imagen", image);
 
-                // 3. Insertar en la base de datos
+                        var result = await command.ExecuteScalarAsync();
+                        int idImagen = Convert.ToInt32(result);
+
+                        response.Message = "Imagen agregada correctamente";
+                        response.Code = ResponseType.Success;
+                        response.Data = new Imagen
+                        {
+                            IdImagen = idImagen,
+                            IdProducto = idProducto,
+                            ImagenUrl = image
+                        };
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Message = "Error: " + ex.Message;
+                response.Code = ResponseType.Error;
+            }
+
+            return response;
+        }
+
+        public async Task<ResponseModel> AgregarImagenes(int idProducto, string image)
+        {
+            ResponseModel response = new ResponseModel();
+
+            try
+            {
                 using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
                 {
                     await connection.OpenAsync();

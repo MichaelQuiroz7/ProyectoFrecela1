@@ -40,6 +40,9 @@ builder.Services.AddScoped<IRepositorioRol, RepositorioRol>();
 // Registro el repositorio de Tipos y subtipos de producto
 builder.Services.AddScoped<IRepositorioTiposProduct, RepositorioTiposProducto>();
 
+// Registro el repositorio de Cliente
+builder.Services.AddScoped<IRepositorioCliente, RepositorioCliente>();
+
 //Add Cors
 builder.Services.AddCors(options => options.AddPolicy("AllowWebApp",
     builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
