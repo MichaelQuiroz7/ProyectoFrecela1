@@ -40,6 +40,7 @@ namespace FRECELABK.Repositorio
 
                                 EmpleadoDTO empleado = new EmpleadoDTO
                                 {
+                                    Cedula = reader.GetString(reader.GetOrdinal("cedula")),
                                     Nombres = reader.GetString(reader.GetOrdinal("nombres")),
                                     Apellidos = reader.GetString(reader.GetOrdinal("apellidos")),
                                     Genero = reader.GetString(reader.GetOrdinal("genero")),
@@ -131,6 +132,147 @@ namespace FRECELABK.Repositorio
                             }
                         }
                     }
+                }
+                catch (Exception ex)
+                {
+                    response.Data = null;
+                    response.Code = ResponseType.Error;
+                    response.Message = ex.Message;
+                }
+            }
+            return response;
+        }
+
+        #endregion
+
+
+        #region Agregar Empleado
+
+        public async Task<ResponseModel> AgregarEmpleado(EmpleadoRequest empleado)
+        {
+            ResponseModel response = new ResponseModel();
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+                    string query = @"
+                    INSERT INTO empleado (nombres, apellidos, cedula, fecha_nacimiento, genero, id_rol, telefono, contrasenia)
+                    VALUES (@nombres, @apellidos, @cedula, @fecha_nacimiento, @genero, @id_rol, @telefono, @contrasenia)";
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@nombres", empleado.Nombres);
+                        command.Parameters.AddWithValue("@apellidos", empleado.Apellidos);
+                        command.Parameters.AddWithValue("@cedula", empleado.Cedula);
+                        command.Parameters.AddWithValue("@fecha_nacimiento", empleado.FechaNacimiento.ToDateTime(new TimeOnly(0)));
+                        command.Parameters.AddWithValue("@genero", empleado.Genero);
+                        //command.Parameters.AddWithValue("@id_rol", empleado.Id_Rol);
+                        command.Parameters.AddWithValue("@id_rol", 2);
+                        command.Parameters.AddWithValue("@telefono", empleado.Telefono);
+                        command.Parameters.AddWithValue("@contrasenia", empleado.contrasenia);
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        if (rowsAffected > 0)
+                        {
+                            response.Message = "Empleado agregado correctamente";
+                            response.Code = ResponseType.Success;
+                            response.Data = null;
+                        }
+                        else
+                        {
+                            response.Message = "Error al agregar el empleado";
+                            response.Code = ResponseType.Error;
+                            response.Data = null;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    response.Data = null;
+                    response.Code = ResponseType.Error;
+                    response.Message = ex.Message;
+                }
+            }
+            return response;
+        }
+
+        #endregion
+
+
+        #region Agregar Descuento
+
+        public async Task<ResponseModel> AgregarDescuento(descuentoEmpleado descuento)
+        {
+            ResponseModel response = new ResponseModel();
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+                    string query = @"Insert Into descuentoempleado (cedula, porcentaje) 
+                                    Values (@cedula, @porcentaje)";
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@cedula", descuento.Cedula);
+                        command.Parameters.AddWithValue("@porcentaje", descuento.Descuento);
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        if (rowsAffected > 0)
+                        {
+                            response.Message = "Descuento agregado correctamente";
+                            response.Code = ResponseType.Success;
+                            response.Data = null;
+                        }
+                        else
+                        {
+                            response.Message = "Error al agregar el descuento";
+                            response.Code = ResponseType.Error;
+                            response.Data = null;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    response.Data = null;
+                    response.Code = ResponseType.Error;
+                    response.Message = ex.Message;
+                }
+            }
+            return response;
+        }
+
+        #endregion
+
+
+        #region Obtener Descuentos
+
+        public async Task<ResponseModel> ObtenerDescuentos(string cedula)
+        {
+            ResponseModel response = new ResponseModel();
+            List<descuentoEmpleado> descuentos = new List<descuentoEmpleado>();
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+                    string query = "SELECT cedula, porcentaje FROM descuentoempleado WHERE cedula = @cedula";
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@cedula", cedula);
+                        using (MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                descuentoEmpleado descuento = new descuentoEmpleado
+                                {
+                                    Cedula = reader.GetString("cedula"),
+                                    Descuento = reader.GetDecimal("porcentaje")
+                                };
+                                descuentos.Add(descuento);
+                            }
+                        }
+                    }
+                    response.Message = "Descuentos obtenidos correctamente";
+                    response.Code = ResponseType.Success;
+                    response.Data = descuentos;
                 }
                 catch (Exception ex)
                 {

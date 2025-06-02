@@ -43,6 +43,9 @@ builder.Services.AddScoped<IRepositorioTiposProduct, RepositorioTiposProducto>()
 // Registro el repositorio de Cliente
 builder.Services.AddScoped<IRepositorioCliente, RepositorioCliente>();
 
+// Registro el repositorio de Venta
+builder.Services.AddScoped<IRepositorioVenta, RepositorioVenta>();
+
 //Add Cors
 builder.Services.AddCors(options => options.AddPolicy("AllowWebApp",
     builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));

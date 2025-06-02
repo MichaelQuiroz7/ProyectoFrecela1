@@ -1,4 +1,5 @@
 ﻿using FRECELABK.Models;
+using FRECELABK.Models.ModelsDTO;
 using FRECELABK.Repositorio;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
@@ -36,6 +37,43 @@ namespace FRECELABK.Controllers
             ResponseModel response = await _repository.ValidarCredenciales(request.Cedula, request.Contrasenia);
             return Ok(response);
         }
+
+        [HttpPost]
+        public async Task<ActionResult<ResponseModel>> CrearEmpleado([FromBody] EmpleadoRequest empleado)
+        {
+            if (empleado == null)
+            {
+                return BadRequest("Empleado no puede ser nulo");
+            }
+            ResponseModel response = await _repository.AgregarEmpleado(empleado);
+            return Ok(response);
+        }
+
+        [HttpPost("descuento")]
+        public async Task<ActionResult<ResponseModel>> AgregarDescuento([FromBody] descuentoEmpleado empleado)
+        {
+            if (empleado == null)
+            {
+                return BadRequest("Descuento no puede ser nulo");
+            }
+            ResponseModel response = await _repository.AgregarDescuento(empleado);
+            return Ok(response);
+        }
+
+
+        [HttpGet("descuento/{cedula}")]
+        public async Task<ActionResult<ResponseModel>> ObtenerDescuentos(string cedula)
+        {
+            if (string.IsNullOrEmpty(cedula))
+            {
+                return BadRequest("Cédula no puede ser nula o vacía");
+            }
+            ResponseModel response = await _repository.ObtenerDescuentos(cedula);
+            return Ok(response);
+        }
+
+
+
     }
 
     public class LoginRequest
