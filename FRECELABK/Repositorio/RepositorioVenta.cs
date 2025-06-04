@@ -1,10 +1,15 @@
 ﻿using FRECELABK.Models;
+using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Asn1.Ocsp;
+using PuppeteerSharp;
+using PuppeteerSharp.Media;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace FRECELABK.Repositorio
 {
-    public class RepositorioVenta : IRepositorioVenta
+    public class RepositorioVenta : IRepositorioVenta   
     {
 
         private readonly string? cadenaConexion;
@@ -183,10 +188,141 @@ namespace FRECELABK.Repositorio
                 await connection.CloseAsync();
             }
         }
-
-
         #endregion
 
 
+
+        public async Task<IActionResult> ConvertToPdf(LatexRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.Cliente) || request.Productos == null || request.Productos.Count == 0)
+            {
+                return new BadRequestObjectResult("Datos de solicitud inválidos.");
+            }
+
+            try
+            {
+                // Datos de la empresa hardcodeados
+                string empresa = "EMPRESA FRECELA";
+                string direccion = "Av. 9 de Octubre, Ciudad de Guayaquil, Ecuador";
+                string ruc = "1234567890001";
+
+                // Tomar solo el primer producto (por si acaso se envían más)
+                var producto = request.Productos[0];
+
+                // Generar HTML basado en los datos proporcionados
+                string htmlContent = $@"<!DOCTYPE html>
+<html lang='es'>
+<head>
+    <meta charset='UTF-8'>
+    <title>Orden de Pago</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 40px; }}
+        .header {{ text-align: center; margin-bottom: 20px; }}
+        .header h1 {{ margin: 0; font-size: 24px; font-weight: bold; }}
+        .company-info {{ font-size: 14px; margin-bottom: 20px; }}
+        .client-info {{ margin-bottom: 20px; }}
+        table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
+        th, td {{ border: 1px solid #000; padding: 8px; text-align: left; }}
+        th {{ background-color: #f2f2f2; font-weight: bold; }}
+        .summary {{ width: 50%; border: none; }}
+        .summary td {{ border: none; padding: 4px 0; font-weight: bold; }}
+        .footer {{ text-align: center; margin-top: 20px; font-style: italic; }}
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <h1>{empresa}</h1>
+        <div class='company-info'>
+            {direccion}<br>
+            RUC: {ruc}
+        </div>
+    </div>
+
+    <div class='client-info'>
+        <strong>Cliente:</strong> {request.Cliente}<br>
+        <strong>Cédula:</strong> {request.Cedula}<br>
+        <strong>Fecha:</strong> {request.Fecha}<br>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Cantidad</th>
+                <th>Precio Unitario</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{producto.Codigo}</td>
+                <td>{producto.Descripcion}</td>
+                <td>{producto.Cantidad}</td>
+                <td>${producto.PrecioUnitario:F2}</td>
+                <td>${producto.Total:F2}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class='summary'>
+        <tr><td>Subtotal (sin descuento):</td><td>${request.SubtotalSinDescuento:F2}</td></tr>
+        <tr><td>Descuento:</td><td>${request.Descuento:F2}</td></tr>
+        <tr><td>Subtotal (con descuento):</td><td>${request.SubtotalConDescuento:F2}</td></tr>
+        <tr><td>IVA (14%):</td><td>${request.Iva:F2}</td></tr>
+        <tr><td><strong>Total:</strong></td><td><strong>${request.Total:F2}</strong></td></tr>
+    </table>
+<br>
+<br>
+<br>
+
+    <div class='footer'>
+        <em>GRACIAS POR PREFERIRNOS!</em>
+    </div>
+</body>
+</html>";
+
+                // Descargar el navegador si no está disponible
+                var browserFetcher = new BrowserFetcher();
+                await browserFetcher.DownloadAsync();
+
+                // Lanzar PuppeteerSharp
+                await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+                {
+                    Headless = true,
+                    Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
+                });
+
+                await using var page = await browser.NewPageAsync();
+                await page.SetContentAsync(htmlContent);
+
+                // Generar el PDF
+                var pdfStream = await page.PdfStreamAsync(new PdfOptions
+                {
+                    Format = PaperFormat.A4,
+                    MarginOptions = new PuppeteerSharp.Media.MarginOptions
+                    {
+                        Top = "20mm",
+                        Bottom = "20mm",
+                        Left = "20mm",
+                        Right = "20mm"
+                    }
+                });
+
+                return new FileStreamResult(pdfStream, "application/pdf")
+                {
+                    FileDownloadName = "orden_de_venta.pdf"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ObjectResult($"Error al generar el PDF: {ex.Message}")
+                {
+                    StatusCode = 500
+                };
+            }
+        }
+
     }
+       
 }

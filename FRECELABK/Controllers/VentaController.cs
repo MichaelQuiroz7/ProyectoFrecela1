@@ -43,5 +43,13 @@ namespace FRECELABK.Controllers
             return BadRequest(response);
         }
 
+
+        [HttpPost("convert-to-pdf")]
+        public async Task<IActionResult> ConvertToPdf([FromBody] LatexRequest request)
+        {
+            var result = await _repositorioVenta.ConvertToPdf(request);
+            return result;
+        }
+
     }
 }

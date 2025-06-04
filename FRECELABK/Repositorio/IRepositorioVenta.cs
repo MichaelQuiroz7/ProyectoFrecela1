@@ -1,4 +1,5 @@
 ﻿using FRECELABK.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FRECELABK.Repositorio
 {
@@ -7,6 +8,7 @@ namespace FRECELABK.Repositorio
 
         Task<ApiResponse> RegistrarVenta(Venta venta);
         Task<DetalleVentaResponse> ObtenerDetalle(DetalleVentaRequest request);
+        Task<IActionResult> ConvertToPdf(LatexRequest request);
 
     }
 }

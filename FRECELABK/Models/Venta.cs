@@ -32,4 +32,28 @@ namespace FRECELABK.Models
         public string CedulaCliente { get; set; }
     }
 
+   
+
+    public class LatexRequest
+    {
+        public string Cliente { get; set; }
+        public string Cedula { get; set; }
+        public string Fecha { get; set; }
+        public List<ProductoRequest> Productos { get; set; }
+        public decimal SubtotalSinDescuento { get; set; }
+        public decimal Descuento { get; set; }
+        public decimal SubtotalConDescuento { get; set; }
+        public decimal Iva { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class ProductoRequest
+    {
+        public string Codigo { get; set; }
+        public string Descripcion { get; set; }
+        public int Cantidad { get; set; }
+        public decimal PrecioUnitario { get; set; }
+        public decimal Total { get; set; }
+    }
+
 }
