@@ -1,10 +1,13 @@
 ﻿using FRECELABK.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Asn1.Ocsp;
 using PuppeteerSharp;
 using PuppeteerSharp.Media;
+using System.Data;
 using System.Diagnostics;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace FRECELABK.Repositorio
@@ -13,6 +16,8 @@ namespace FRECELABK.Repositorio
     {
 
         private readonly string? cadenaConexion;
+        ResponseModel response = new ResponseModel();
+
 
         public RepositorioVenta(IConfiguration conf)
         {
@@ -31,12 +36,12 @@ namespace FRECELABK.Repositorio
                 // Obtener la fecha y hora actual
                 DateTime ahora = DateTime.Now;
 
-                DateTime fechaActual = ahora.Date; // Solo la parte de la fecha
+                DateTime fechaActual = ahora.Date; 
 
                 // Formatear la hora como string de 6 dígitos (HHmmss)
                 string horaActual = ahora.ToString("HHmmss");
 
-                using var command = new MySqlCommand("sp_insertar_venta", connection)
+                using var command = new MySqlCommand("sp_insertar_pedido", connection)
                 {
                     CommandType = System.Data.CommandType.StoredProcedure
                 };
@@ -141,7 +146,7 @@ namespace FRECELABK.Repositorio
 
                 // Parámetros de salida
                 command.Parameters.Add("p_mensaje", MySqlDbType.VarChar, 255).Direction = System.Data.ParameterDirection.Output;
-                command.Parameters.Add("p_code", MySqlDbType.VarChar, 2).Direction = System.Data.ParameterDirection.Output;
+                command.Parameters.Add("p_code", MySqlDbType.VarChar, 255).Direction = System.Data.ParameterDirection.Output;
                 command.Parameters.Add("p_nombre_producto", MySqlDbType.VarChar, 100).Direction = System.Data.ParameterDirection.Output;
                 command.Parameters.Add("p_descripcion_producto", MySqlDbType.Text).Direction = System.Data.ParameterDirection.Output;
                 command.Parameters.Add("p_precio_unitario", MySqlDbType.Decimal).Direction = System.Data.ParameterDirection.Output;
@@ -191,6 +196,7 @@ namespace FRECELABK.Repositorio
         #endregion
 
 
+        #region ARMAR PDF
 
         public async Task<IActionResult> ConvertToPdf(LatexRequest request)
         {
@@ -201,6 +207,8 @@ namespace FRECELABK.Repositorio
 
             try
             {
+
+
                 // Datos de la empresa hardcodeados
                 string empresa = "EMPRESA FRECELA";
                 string direccion = "Av. 9 de Octubre, Ciudad de Guayaquil, Ecuador";
@@ -296,6 +304,21 @@ namespace FRECELABK.Repositorio
                 await using var page = await browser.NewPageAsync();
                 await page.SetContentAsync(htmlContent);
 
+
+                // Actualizamos la tabla venta con el descuento
+                using (var connection = new MySqlConnection(cadenaConexion))
+                {
+                    await connection.OpenAsync();
+
+                    var updateQuery = "UPDATE venta SET descuento = @descuento WHERE id_venta = @idVenta";
+                    using (var command = new MySqlCommand(updateQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@descuento", request.Descuento);
+                        command.Parameters.AddWithValue("@idVenta", producto.Codigo);
+                        await command.ExecuteNonQueryAsync();
+                    }
+                }
+
                 // Generar el PDF
                 var pdfStream = await page.PdfStreamAsync(new PdfOptions
                 {
@@ -323,6 +346,240 @@ namespace FRECELABK.Repositorio
             }
         }
 
+        #endregion
+
+
+        #region REGISTRAR PAGO
+
+        public async Task<ResponseModel> EditarComprobante(Comprobante comprobante)
+        {
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                MySqlTransaction transaction = null;
+                try
+                {
+                    await connection.OpenAsync();
+                    transaction = await connection.BeginTransactionAsync();
+
+                    // Validación de datos básicos
+                    if (comprobante.IdVenta <= 0 || comprobante.Fecha == default || comprobante.Hora == default)
+                    {
+                        return new ResponseModel
+                        {
+                            Message = "Datos de comprobante inválidos",
+                            Code = ResponseType.Error,
+                            Data = null
+                        };
+                    }
+
+                    // Validar si el comprobante ya existe
+                    string checkQuery = "SELECT COUNT(*) FROM comprobante WHERE id_venta = @idVenta";
+                    using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection, transaction))
+                    {
+                        checkCommand.Parameters.AddWithValue("@idVenta", comprobante.IdVenta);
+                        int count = Convert.ToInt32(await checkCommand.ExecuteScalarAsync());
+                        if (count > 0)
+                        {
+                            await transaction.RollbackAsync();
+                            return new ResponseModel
+                            {
+                                Message = "El pago ya se realizó previamente",
+                                Code = ResponseType.Error,
+                                Data = null
+                            };
+                        }
+                    }
+
+                    // Obtener id_producto y cantidad de la venta
+                    string ventaQuery = "SELECT id_producto, cantidad FROM venta WHERE id_venta = @idVenta";
+                    int idProducto = 0;
+                    int cantidadVenta = 0;
+                    using (MySqlCommand ventaCommand = new MySqlCommand(ventaQuery, connection, transaction))
+                    {
+                        ventaCommand.Parameters.AddWithValue("@idVenta", comprobante.IdVenta);
+                        using (MySqlDataReader reader = (MySqlDataReader)await ventaCommand.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                idProducto = reader.GetInt32("id_producto");
+                                cantidadVenta = reader.GetInt32("cantidad");
+                            }
+                            else
+                            {
+                                await transaction.RollbackAsync();
+                                return new ResponseModel
+                                {
+                                    Message = "Venta no encontrada",
+                                    Code = ResponseType.Error,
+                                    Data = null
+                                };
+                            }
+                        }
+                    }
+
+                    // Actualizar stock
+                    string updateStockQuery = @"
+                UPDATE producto 
+                SET stock = stock - @cantidadVenta 
+                WHERE id_producto = @idProducto AND stock >= @cantidadVenta";
+
+                    using (MySqlCommand updateStockCommand = new MySqlCommand(updateStockQuery, connection, transaction))
+                    {
+                        updateStockCommand.Parameters.AddWithValue("@idProducto", idProducto);
+                        updateStockCommand.Parameters.AddWithValue("@cantidadVenta", cantidadVenta);
+                        int stockRowsAffected = await updateStockCommand.ExecuteNonQueryAsync();
+                        if (stockRowsAffected == 0)
+                        {
+                            await transaction.RollbackAsync();
+                            return new ResponseModel
+                            {
+                                Message = "Producto no encontrado o stock insuficiente",
+                                Code = ResponseType.Error,
+                                Data = null
+                            };
+                        }
+                    }
+
+                    // Cambiar estado de venta a PAGADO (valor fijo y seguro)
+
+                    string updateVentaQuery = @"
+    UPDATE venta 
+    SET estado = 'PAGADO'
+    WHERE id_venta = @idVenta AND estado = 'PENDIENTE'";
+
+
+                    using (MySqlCommand updateVentaCommand = new MySqlCommand(updateVentaQuery, connection, transaction))
+                    {
+                        updateVentaCommand.Parameters.AddWithValue("@idVenta", comprobante.IdVenta);
+                        int updateRows = await updateVentaCommand.ExecuteNonQueryAsync();
+                        if (updateRows == 0)
+                        {
+                            await transaction.RollbackAsync();
+                            return new ResponseModel
+                            {
+                                Message = "No se pudo actualizar el estado de la venta (puede no estar pendiente)",
+                                Code = ResponseType.Error,
+                                Data = null
+                            };
+                        }
+                    }
+
+                    // Insertar comprobante
+                    string insertComprobanteQuery = @"
+                INSERT INTO comprobante (id_venta, imagen, fecha, hora)
+                VALUES (@idVenta, @imagen, @fecha, @hora)";
+                    using (MySqlCommand insertCommand = new MySqlCommand(insertComprobanteQuery, connection, transaction))
+                    {
+                        insertCommand.Parameters.AddWithValue("@idVenta", comprobante.IdVenta);
+                        insertCommand.Parameters.AddWithValue("@imagen", comprobante.Imagen ?? (object)DBNull.Value);
+                        insertCommand.Parameters.AddWithValue("@fecha", comprobante.Fecha);
+                        insertCommand.Parameters.AddWithValue("@hora", comprobante.Hora.ToString(@"hh\:mm\:ss"));
+                        int rowsInserted = await insertCommand.ExecuteNonQueryAsync();
+                        if (rowsInserted == 0)
+                        {
+                            // Revertir el estado si falla el insert
+                            string revertQuery = @"
+                        UPDATE venta 
+                        SET estado = 'PENDIENTE' 
+                        WHERE id_venta = @idVenta";
+                            using (MySqlCommand revertCommand = new MySqlCommand(revertQuery, connection, transaction))
+                            {
+                                revertCommand.Parameters.AddWithValue("@idVenta", comprobante.IdVenta);
+                                await revertCommand.ExecuteNonQueryAsync();
+                            }
+                            await transaction.RollbackAsync();
+                            return new ResponseModel
+                            {
+                                Message = "Error al registrar el comprobante, estado revertido a PENDIENTE",
+                                Code = ResponseType.Error,
+                                Data = null
+                            };
+                        }
+                    }
+
+                    await transaction.CommitAsync();
+                    return new ResponseModel
+                    {
+                        Message = "Comprobante registrado correctamente",
+                        Code = ResponseType.Success,
+                        Data = comprobante
+                    };
+                }
+                catch (MySqlException ex)
+                {
+                    if (transaction != null) await transaction.RollbackAsync();
+                    return new ResponseModel
+                    {
+                        Message = $"Error de base de datos: {ex.Message} (Código: {ex.Number})",
+                        Code = ResponseType.Error,
+                        Data = null
+                    };
+                }
+                catch (Exception ex)
+                {
+                    if (transaction != null) await transaction.RollbackAsync();
+                    return new ResponseModel
+                    {
+                        Message = $"Error inesperado: {ex.Message}",
+                        Code = ResponseType.Error,
+                        Data = null
+                    };
+                }
+            }
+        }
+
+
+        #endregion
+
+
+        #region Obtener Estadisticas
+
+
+        public async Task<ResponseModel> ObtenerEstadisticasVentasPorMes()
+        {
+            ResponseModel response = new ResponseModel();
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+                    string query = "CALL sp_estadisticas_ventas_por_mes();";
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                string jsonResult = reader.GetString("resultado");
+                                var estadisticas = JsonSerializer.Deserialize<object>(jsonResult);
+                                response.Message = "Estadísticas obtenidas correctamente";
+                                response.Code = ResponseType.Success;
+                                response.Data = estadisticas;
+                            }
+                            else
+                            {
+                                response.Message = "No se encontraron estadísticas";
+                                response.Code = ResponseType.Error;
+                                response.Data = null;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    response.Data = null;
+                    response.Code = ResponseType.Error;
+                    response.Message = ex.Message;
+                }
+            }
+            return response;
+        }
+
+        #endregion
+
+
+
+
     }
-       
+
 }

@@ -56,4 +56,23 @@ namespace FRECELABK.Models
         public decimal Total { get; set; }
     }
 
+    public class Comprobante
+    {
+        public int IdVenta { get; set; }
+        public byte[] Imagen { get; set; }
+        public DateTime Fecha { get; set; }
+        public TimeSpan Hora { get; set; }
+    }
+
+
+    public class ComprobanteModel
+    {
+        public int IdVenta { get; set; }
+        public IFormFile Imagen { get; set; }
+        public DateTime Fecha { get; set; }
+        public TimeSpan Hora { get; set; }
+    }
+
+
+
 }
