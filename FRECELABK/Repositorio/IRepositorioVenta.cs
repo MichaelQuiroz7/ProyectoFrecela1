@@ -11,6 +11,7 @@ namespace FRECELABK.Repositorio
         Task<IActionResult> ConvertToPdf(LatexRequest request);
         Task<ResponseModel> EditarComprobante(Comprobante comprobante);
         Task<ResponseModel> ObtenerEstadisticasVentasPorMes();
+        Task<ResponseModel> InsertarEntrega(Entrega entrega);
 
     }
 }

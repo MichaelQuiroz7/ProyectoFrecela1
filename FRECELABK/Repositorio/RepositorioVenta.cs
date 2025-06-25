@@ -9,6 +9,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace FRECELABK.Repositorio
 {
@@ -88,7 +89,6 @@ namespace FRECELABK.Repositorio
 
         #region Obtener Pedido
 
-
         public async Task<DetalleVentaResponse> ObtenerDetalle(DetalleVentaRequest request)
         {
             using var connection = new MySqlConnection(cadenaConexion);
@@ -108,7 +108,9 @@ namespace FRECELABK.Repositorio
                         PrecioTotal = null,
                         NombresCliente = null,
                         ApellidosCliente = null,
-                        CedulaCliente = null
+                        CedulaCliente = null,
+                        DireccionCliente = null,
+                        TipoEntrega = null
                     };
                 }
 
@@ -130,7 +132,9 @@ namespace FRECELABK.Repositorio
                         PrecioTotal = null,
                         NombresCliente = null,
                         ApellidosCliente = null,
-                        CedulaCliente = null
+                        CedulaCliente = null,
+                        DireccionCliente = null,
+                        TipoEntrega = null
                     };
                 }
 
@@ -155,6 +159,8 @@ namespace FRECELABK.Repositorio
                 command.Parameters.Add("p_nombres_cliente", MySqlDbType.VarChar, 100).Direction = System.Data.ParameterDirection.Output;
                 command.Parameters.Add("p_apellidos_cliente", MySqlDbType.VarChar, 100).Direction = System.Data.ParameterDirection.Output;
                 command.Parameters.Add("p_cedula_cliente", MySqlDbType.VarChar, 20).Direction = System.Data.ParameterDirection.Output;
+                command.Parameters.Add("p_direccion_cliente", MySqlDbType.VarChar, 20).Direction = System.Data.ParameterDirection.Output;
+                command.Parameters.Add("p_tipo_entrega", MySqlDbType.VarChar, 20).Direction = System.Data.ParameterDirection.Output;
 
                 await command.ExecuteNonQueryAsync();
 
@@ -169,7 +175,9 @@ namespace FRECELABK.Repositorio
                     PrecioTotal = command.Parameters["p_precio_total"].Value != DBNull.Value ? Convert.ToDecimal(command.Parameters["p_precio_total"].Value) : null,
                     NombresCliente = command.Parameters["p_nombres_cliente"].Value != DBNull.Value ? command.Parameters["p_nombres_cliente"].Value.ToString() : null,
                     ApellidosCliente = command.Parameters["p_apellidos_cliente"].Value != DBNull.Value ? command.Parameters["p_apellidos_cliente"].Value.ToString() : null,
-                    CedulaCliente = command.Parameters["p_cedula_cliente"].Value != DBNull.Value ? command.Parameters["p_cedula_cliente"].Value.ToString() : null
+                    CedulaCliente = command.Parameters["p_cedula_cliente"].Value != DBNull.Value ? command.Parameters["p_cedula_cliente"].Value.ToString() : null,
+                    DireccionCliente = command.Parameters["p_direccion_cliente"].Value != DBNull.Value ? command.Parameters["p_direccion_cliente"].Value.ToString() : null,
+                    TipoEntrega = command.Parameters["p_tipo_entrega"].Value != DBNull.Value ? command.Parameters["p_tipo_entrega"].Value.ToString() : null
                 };
             }
             catch (Exception ex)
@@ -185,7 +193,9 @@ namespace FRECELABK.Repositorio
                     PrecioTotal = null,
                     NombresCliente = null,
                     ApellidosCliente = null,
-                    CedulaCliente = null
+                    CedulaCliente = null,
+                    DireccionCliente = null,
+                    TipoEntrega = null
                 };
             }
             finally
@@ -193,6 +203,7 @@ namespace FRECELABK.Repositorio
                 await connection.CloseAsync();
             }
         }
+
         #endregion
 
 
@@ -200,22 +211,43 @@ namespace FRECELABK.Repositorio
 
         public async Task<IActionResult> ConvertToPdf(LatexRequest request)
         {
+            string tipoEntrega = "";
+
             if (request == null || string.IsNullOrEmpty(request.Cliente) || request.Productos == null || request.Productos.Count == 0)
             {
                 return new BadRequestObjectResult("Datos de solicitud inválidos.");
             }
 
+            string query = "SELECT tipoentrega INTO @v_tipo_entrega FROM entrega WHERE id_venta = @p_id_venta;";
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                await connection.OpenAsync();
+                var producto = request.Productos[0];
+
+                using (MySqlCommand command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@p_id_venta", producto.Codigo);
+                    command.Parameters.Add("@v_tipo_entrega", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+                    await command.ExecuteNonQueryAsync();
+                    tipoEntrega = command.Parameters["@v_tipo_entrega"].Value != DBNull.Value ? command.Parameters["@v_tipo_entrega"].Value.ToString() : null;
+                }
+            }
+
             try
             {
-
-
                 // Datos de la empresa hardcodeados
                 string empresa = "EMPRESA FRECELA";
                 string direccion = "Av. 9 de Octubre, Ciudad de Guayaquil, Ecuador";
                 string ruc = "1234567890001";
 
-                // Tomar solo el primer producto (por si acaso se envían más)
+                // Tomar solo el primer producto
                 var producto = request.Productos[0];
+
+                // Calcular el costo de envío
+                decimal costoEnvio = tipoEntrega == "ENTREGA A DOMICILIO" ? 5.00m : 0.00m;
+
+                // Calcular el total final incluyendo el costo de envío
+                decimal totalFinal = request.Total ;
 
                 // Generar HTML basado en los datos proporcionados
                 string htmlContent = $@"<!DOCTYPE html>
@@ -250,6 +282,7 @@ namespace FRECELABK.Repositorio
         <strong>Cliente:</strong> {request.Cliente}<br>
         <strong>Cédula:</strong> {request.Cedula}<br>
         <strong>Fecha:</strong> {request.Fecha}<br>
+        <strong>Tipo de entrega:</strong> {tipoEntrega}<br>
     </div>
 
     <table>
@@ -278,11 +311,12 @@ namespace FRECELABK.Repositorio
         <tr><td>Descuento:</td><td>${request.Descuento:F2}</td></tr>
         <tr><td>Subtotal (con descuento):</td><td>${request.SubtotalConDescuento:F2}</td></tr>
         <tr><td>IVA (14%):</td><td>${request.Iva:F2}</td></tr>
-        <tr><td><strong>Total:</strong></td><td><strong>${request.Total:F2}</strong></td></tr>
+        <tr><td>Envío:</td><td>${costoEnvio:F2}</td></tr>
+        <tr><td><strong>Total a Pagar:</strong></td><td><strong>${totalFinal:F2}</strong></td></tr>
     </table>
-<br>
-<br>
-<br>
+    <br>
+    <br>
+    <br>
 
     <div class='footer'>
         <em>GRACIAS POR PREFERIRNOS!</em>
@@ -303,7 +337,6 @@ namespace FRECELABK.Repositorio
 
                 await using var page = await browser.NewPageAsync();
                 await page.SetContentAsync(htmlContent);
-
 
                 // Actualizamos la tabla venta con el descuento
                 using (var connection = new MySqlConnection(cadenaConexion))
@@ -577,6 +610,51 @@ namespace FRECELABK.Repositorio
 
         #endregion
 
+
+        #region Agregar tipo de entrega
+
+        public async Task<ResponseModel> InsertarEntrega(Entrega entrega)
+        {
+            ResponseModel response = new ResponseModel();
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+                    string query = "INSERT INTO entrega (id_venta, tipoentrega, costoentrega, direccion) VALUES (@IdVenta, @TipoEntrega, @CostoEntrega, @Direccion);";
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@IdVenta", entrega.IdVenta);
+                        command.Parameters.AddWithValue("@TipoEntrega", entrega.TipoEntrega.ToString());
+                        command.Parameters.AddWithValue("@CostoEntrega", (object)entrega.CostoEntrega ?? DBNull.Value);
+                        command.Parameters.AddWithValue("@Direccion", (object)entrega.Direccion ?? DBNull.Value);
+
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        if (rowsAffected > 0)
+                        {
+                            response.Message = "Entrega insertada correctamente";
+                            response.Code = ResponseType.Success;
+                            response.Data = entrega;
+                        }
+                        else
+                        {
+                            response.Message = "No se pudo insertar la entrega";
+                            response.Code = ResponseType.Error;
+                            response.Data = null;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    response.Data = null;
+                    response.Code = ResponseType.Error;
+                    response.Message = ex.Message;
+                }
+            }
+            return response;
+        }
+
+        #endregion
 
 
 

@@ -121,5 +121,27 @@ namespace FRECELABK.Controllers
         #endregion
 
 
+        #region Controlador tipo de entrega
+
+        [HttpPost("registrarEntrega")]
+        public async Task<IActionResult> InsertarEntrega([FromBody] Entrega entrega)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ResponseModel
+                {
+                    Code = ResponseType.Error,
+                    Message = "Datos de entrada inválidos",
+                    Data = null
+                });
+            }
+
+            var response = await _repositorioVenta.InsertarEntrega(entrega);
+
+            return Ok(response);
+        }
+
+        #endregion
+
     }
 }

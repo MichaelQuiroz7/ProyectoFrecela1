@@ -30,6 +30,8 @@ namespace FRECELABK.Models
         public string NombresCliente { get; set; }
         public string ApellidosCliente { get; set; }
         public string CedulaCliente { get; set; }
+        public string DireccionCliente { get; set; }
+        public string TipoEntrega { get; set; }
     }
 
    
@@ -73,6 +75,19 @@ namespace FRECELABK.Models
         public TimeSpan Hora { get; set; }
     }
 
+    //public enum TipoEntrega
+    //{
+    //    RETIRAR_EN_LOCAL = 'ENTREGA EN LOCAL',
+    //    ENTREGA_A_DOMICILIO
+    //}
+
+    public class Entrega
+    {
+        public int IdVenta { get; set; }
+        public string TipoEntrega { get; set; } = "ENTREGA EN LOCAL" ;
+        public decimal? CostoEntrega { get; set; }
+        public string Direccion { get; set; }
+    }
 
 
 }
