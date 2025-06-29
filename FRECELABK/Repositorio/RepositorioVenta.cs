@@ -658,6 +658,162 @@ namespace FRECELABK.Repositorio
 
 
 
+        #region Obtener ventas Pagadas 
+
+        public async Task<ResponseModel> ObtenerVentasPagadasORechazadasConDetalles()
+        {
+            ResponseModel response = new ResponseModel();
+            List<(int IdVenta, string Estado)> ventasIds = new List<(int, string)>();
+            try
+            {
+                // Paso 1: Obtener todos los id_venta y estado en una lista
+                using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+                {
+                    await connection.OpenAsync();
+                    string queryVentas = "SELECT id_venta, estado FROM venta WHERE estado IN (@Estado1, @Estado2);";
+                    using (MySqlCommand commandVentas = new MySqlCommand(queryVentas, connection))
+                    {
+                        commandVentas.Parameters.AddWithValue("@Estado1", "PAGADO");
+                        commandVentas.Parameters.AddWithValue("@Estado2", "RECHAZADO");
+
+                        using (MySqlDataReader readerVentas = (MySqlDataReader)await commandVentas.ExecuteReaderAsync())
+                        {
+                            while (await readerVentas.ReadAsync())
+                            {
+                                int idVenta = readerVentas.GetInt32("id_venta");
+                                string estado = readerVentas.GetString("estado");
+                                ventasIds.Add((idVenta, estado));
+                            }
+                        }
+                    }
+                }
+
+                // Paso 2: Procesar cada id_venta con una nueva conexión
+                List<DetalleVentaConsulta> detallesVentas = new List<DetalleVentaConsulta>();
+                foreach (var (idVenta, estado) in ventasIds)
+                {
+                    // Fix for CS1955: Replace the incorrect usage of BitConverter with the correct method to convert an integer to a Base64 string.
+                    string idVentaBase64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(idVenta.ToString()));
+
+                    using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+                    {
+                        await connection.OpenAsync();
+                        using (MySqlCommand commandDetalle = new MySqlCommand("sp_obtener_detalle_venta", connection))
+                        {
+                            commandDetalle.CommandType = CommandType.StoredProcedure;
+
+                            // Parámetros de entrada y salida
+                            commandDetalle.Parameters.AddWithValue("@p_id_venta_base64", idVentaBase64);
+                            commandDetalle.Parameters.Add("@p_mensaje", MySqlDbType.VarChar, 255).Direction = ParameterDirection.Output;
+                            commandDetalle.Parameters.Add("@p_code", MySqlDbType.VarChar, 2).Direction = ParameterDirection.Output;
+                            commandDetalle.Parameters.Add("@p_nombre_producto", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+                            commandDetalle.Parameters.Add("@p_descripcion_producto", MySqlDbType.Text).Direction = ParameterDirection.Output;
+                            commandDetalle.Parameters.Add("@p_precio_unitario", MySqlDbType.Decimal).Direction = ParameterDirection.Output;
+                            commandDetalle.Parameters.Add("@p_cantidad", MySqlDbType.Int32).Direction = ParameterDirection.Output;
+                            commandDetalle.Parameters.Add("@p_precio_total", MySqlDbType.Decimal).Direction = ParameterDirection.Output;
+                            commandDetalle.Parameters.Add("@p_nombres_cliente", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+                            commandDetalle.Parameters.Add("@p_apellidos_cliente", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+                            commandDetalle.Parameters.Add("@p_cedula_cliente", MySqlDbType.VarChar, 20).Direction = ParameterDirection.Output;
+                            commandDetalle.Parameters.Add("@p_direccion_cliente", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+                            commandDetalle.Parameters.Add("@p_tipo_entrega", MySqlDbType.VarChar, 100).Direction = ParameterDirection.Output;
+
+                            await commandDetalle.ExecuteNonQueryAsync();
+
+                            // Obtener los valores de salida
+                            string mensaje = commandDetalle.Parameters["@p_mensaje"].Value.ToString();
+                            if (mensaje == "Detalles de la venta obtenidos exitosamente")
+                            {
+                                DetalleVentaConsulta detalle = new DetalleVentaConsulta
+                                {
+                                    Code = commandDetalle.Parameters["@p_code"].Value.ToString(),
+                                    Message = mensaje,
+                                    NombreProducto = commandDetalle.Parameters["@p_nombre_producto"].Value as string ?? "N/A",
+                                    DescripcionProducto = commandDetalle.Parameters["@p_descripcion_producto"].Value as string,
+                                    PrecioUnitario = commandDetalle.Parameters["@p_precio_unitario"].Value as decimal?,
+                                    Cantidad = commandDetalle.Parameters["@p_cantidad"].Value as int?,
+                                    PrecioTotal = commandDetalle.Parameters["@p_precio_total"].Value as decimal?,
+                                    NombresCliente = commandDetalle.Parameters["@p_nombres_cliente"].Value as string ?? "N/A",
+                                    ApellidosCliente = commandDetalle.Parameters["@p_apellidos_cliente"].Value as string ?? "N/A",
+                                    CedulaCliente = commandDetalle.Parameters["@p_cedula_cliente"].Value as string ?? "N/A",
+                                    DireccionCliente = commandDetalle.Parameters["@p_direccion_cliente"].Value as string ?? "N/A",
+                                    TipoEntrega = commandDetalle.Parameters["@p_tipo_entrega"].Value as string ?? "N/A",
+                                    EstadoEntrega = estado // Usar el estado de la venta original
+                                };
+                                detallesVentas.Add(detalle);
+                            }
+                        }
+                    }
+                }
+
+                if (detallesVentas.Any())
+                {
+                    response.Message = "Detalles de ventas obtenidos correctamente";
+                    response.Code = ResponseType.Success;
+                    response.Data = detallesVentas;
+                }
+                else
+                {
+                    response.Message = "No se encontraron ventas con estado PAGADO o RECHAZADO";
+                    response.Code = ResponseType.Success;
+                    response.Data = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Data = null;
+                response.Code = ResponseType.Error;
+                response.Message = ex.Message;
+            }
+            return response;
+        }
+
+        #endregion
+
+
+        #region Venta Actualizada 
+
+        public async Task<ResponseModel> ActualizarEstadoVenta(DetalleVentaConsulta detalle)
+        {
+            ResponseModel response = new ResponseModel();
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+                    string query = "UPDATE venta SET estado = @Estado WHERE id_venta = @IdVenta;";
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@IdVenta", detalle.Code);
+                        command.Parameters.AddWithValue("@Estado", detalle.EstadoEntrega);
+
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        if (rowsAffected > 0)
+                        {
+                            response.Message = "Estado de la venta actualizado correctamente";
+                            response.Code = ResponseType.Success;
+                            response.Data = new { IdVenta = detalle.Code, Estado = detalle.EstadoEntrega };
+                        }
+                        else
+                        {
+                            response.Message = "No se encontró la venta o no se pudo actualizar";
+                            response.Code = ResponseType.Error;
+                            response.Data = null;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    response.Data = null;
+                    response.Code = ResponseType.Error;
+                    response.Message = ex.Message;
+                }
+            }
+            return response;
+        }
+
+        #endregion
+
+
     }
 
 }

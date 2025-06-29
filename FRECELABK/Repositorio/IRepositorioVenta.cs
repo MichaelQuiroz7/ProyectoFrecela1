@@ -12,6 +12,8 @@ namespace FRECELABK.Repositorio
         Task<ResponseModel> EditarComprobante(Comprobante comprobante);
         Task<ResponseModel> ObtenerEstadisticasVentasPorMes();
         Task<ResponseModel> InsertarEntrega(Entrega entrega);
+        Task<ResponseModel> ObtenerVentasPagadasORechazadasConDetalles();
+        Task<ResponseModel> ActualizarEstadoVenta(DetalleVentaConsulta detalle);
 
     }
 }

@@ -1,5 +1,6 @@
 ﻿using FRECELABK.Models;
 using FRECELABK.Models.ModelsDTO;
+using Microsoft.EntityFrameworkCore;
 using MySql.Data.MySqlClient;
 
 namespace FRECELABK.Repositorio
@@ -417,6 +418,89 @@ namespace FRECELABK.Repositorio
 
         #endregion
 
+
+
+
+        #region Obtener productos stock bajo
+
+        
+        public async Task<ResponseModel> ObtenerProductosBajoStock()
+        {
+            ResponseModel response = new ResponseModel();
+            List<Producto> productos = new List<Producto>();
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+                    string query = @"
+            SELECT 
+                p.id_producto, p.nombre, p.precio, p.descripcion, p.stock, 
+                p.id_tipo_producto, p.id_tipo_subproducto,
+                tp.nombre_tipo, tsp.nombre_subtipo
+            FROM producto p
+            JOIN tipo_producto tp ON p.id_tipo_producto = tp.id_tipo_producto
+            JOIN tipo_subproducto tsp ON p.id_tipo_subproducto = tsp.id_tipo_subproducto
+            WHERE p.stock < 40";
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        using (MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                Producto producto = new Producto
+                                {
+                                    IdProducto = reader.GetInt32("id_producto"),
+                                    Nombre = reader.GetString("nombre"),
+                                    Precio = reader.GetDecimal("precio"),
+                                    Descripcion = reader.IsDBNull(reader.GetOrdinal("descripcion")) ? null : reader.GetString("descripcion"),
+                                    Stock = reader.GetInt32("stock"),
+                                    IdTipoProducto = reader.GetInt32("id_tipo_producto"),
+                                    IdTipoSubproducto = reader.GetInt32("id_tipo_subproducto")
+                                };
+                                productos.Add(producto);
+                            }
+                        }
+                    }
+
+                    // Obtener imágenes y alertas para cada producto
+                    foreach (var producto in productos)
+                    {
+                        // Obtener imágenes
+                        string imagenQuery = "SELECT id_imagen, id_producto, imagen FROM imagen WHERE id_producto = @idProducto";
+                        using (MySqlCommand imagenCommand = new MySqlCommand(imagenQuery, connection))
+                        {
+                            imagenCommand.Parameters.AddWithValue("@idProducto", producto.IdProducto);
+                            using (MySqlDataReader imagenReader = (MySqlDataReader)await imagenCommand.ExecuteReaderAsync())
+                            {
+                                while (await imagenReader.ReadAsync())
+                                {
+                                    producto.Imagens.Add(new Imagen
+                                    {
+                                        IdImagen = imagenReader.GetInt32("id_imagen"),
+                                        IdProducto = imagenReader.GetInt32("id_producto"),
+                                        ImagenUrl = imagenReader.GetString("imagen")
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    response.Message = "Productos con stock bajo obtenidos correctamente";
+                    response.Code = ResponseType.Success;
+                    response.Data = productos;
+                }
+                catch (Exception ex)
+                {
+                    response.Data = null;
+                    response.Code = ResponseType.Error;
+                    response.Message = ex.Message;
+                }
+            }
+            return response;
+        }
+
+        #endregion
 
 
     }

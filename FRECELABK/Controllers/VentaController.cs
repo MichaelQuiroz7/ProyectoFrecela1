@@ -21,10 +21,10 @@ namespace FRECELABK.Controllers
         [HttpPost("RegistrarPedido")]
         public async Task<IActionResult> RegistrarVenta([FromBody] Venta venta)
         {
-           
+
             ApiResponse response = await _repositorioVenta.RegistrarVenta(venta);
             return Ok(response);
-            
+
         }
 
         [HttpPost("detallePedido")]
@@ -88,9 +88,9 @@ namespace FRECELABK.Controllers
                 // Llamar al repositorio
                 ResponseModel response = await _repositorioVenta.EditarComprobante(comprobante);
 
-                
-                    return Ok(response);
-                
+
+                return Ok(response);
+
             }
             catch (Exception ex)
             {
@@ -113,9 +113,9 @@ namespace FRECELABK.Controllers
         public async Task<ActionResult<ResponseModel>> ObtenerEstadisticas()
         {
 
-            ResponseModel response = await _repositorioVenta.ObtenerEstadisticasVentasPorMes(); 
+            ResponseModel response = await _repositorioVenta.ObtenerEstadisticasVentasPorMes();
             return Ok(response);
-            
+
         }
 
         #endregion
@@ -126,15 +126,7 @@ namespace FRECELABK.Controllers
         [HttpPost("registrarEntrega")]
         public async Task<IActionResult> InsertarEntrega([FromBody] Entrega entrega)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new ResponseModel
-                {
-                    Code = ResponseType.Error,
-                    Message = "Datos de entrada inválidos",
-                    Data = null
-                });
-            }
+           
 
             var response = await _repositorioVenta.InsertarEntrega(entrega);
 
@@ -142,6 +134,43 @@ namespace FRECELABK.Controllers
         }
 
         #endregion
+
+
+
+        #region Obtener Ventas Pagadas o Rechazadas con Detalles
+
+        [HttpGet("ventasPagadasORechazadasConDetalles")]
+        public async Task<IActionResult> ObtenerVentasPoR()
+        {
+            var response = await _repositorioVenta.ObtenerVentasPagadasORechazadasConDetalles();
+            return Ok(response);
+
+        }
+
+        #endregion
+
+
+
+        #region Venta Completa Controlador
+
+        [HttpPost("actualizarEstadoVenta")]
+        public async Task<IActionResult> ActualizarEstadoVenta([FromBody] DetalleVentaConsulta detalle)
+        {
+            if (detalle == null)
+            {
+                return BadRequest(new ResponseModel
+                {
+                    Code = ResponseType.Error,
+                    Message = "Detalle de venta no puede ser nulo.",
+                    Data = null
+                });
+            }
+            var response = await _repositorioVenta.ActualizarEstadoVenta(detalle);
+            return Ok(response);
+        }
+
+        #endregion
+
 
     }
 }

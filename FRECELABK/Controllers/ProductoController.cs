@@ -59,6 +59,14 @@ namespace FRECELABK.Controllers
         }
 
 
+        [HttpGet("ProductosBajoStock")]
+        public async Task<ActionResult<ResponseModel>> ObtenerProductosBajoStock()
+        {
+            ResponseModel response = await _repository.ObtenerProductosBajoStock();
+            return Ok(response);
+        }
+
+
 
     }
 }
