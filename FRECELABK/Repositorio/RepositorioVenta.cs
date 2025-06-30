@@ -212,6 +212,8 @@ namespace FRECELABK.Repositorio
         public async Task<IActionResult> ConvertToPdf(LatexRequest request)
         {
             string tipoEntrega = "";
+            string nombres = "";
+            string apellidos = "";
 
             if (request == null || string.IsNullOrEmpty(request.Cliente) || request.Productos == null || request.Productos.Count == 0)
             {
@@ -233,11 +235,31 @@ namespace FRECELABK.Repositorio
                 }
             }
 
+            string query2 = "SELECT e.nombres, e.apellidos FROM venta v JOIN empleado e ON v.id_empleado = e.id_empleado WHERE id_venta = @p_id_venta;";
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                await connection.OpenAsync();
+                var producto = request.Productos[0];
+                using (MySqlCommand command = new MySqlCommand(query2, connection))
+                {
+                    command.Parameters.AddWithValue("@p_id_venta", producto.Codigo);
+                    using (MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            nombres = reader["nombres"] != DBNull.Value ? reader["nombres"].ToString() : null;
+                            apellidos = reader["apellidos"] != DBNull.Value ? reader["apellidos"].ToString() : null;
+                        }
+                    }
+                }
+            }
+
+
             try
             {
-                // Datos de la empresa hardcodeados
+                // Datos de la empresa
                 string empresa = "EMPRESA FRECELA";
-                string direccion = "Av. 9 de Octubre, Ciudad de Guayaquil, Ecuador";
+                string direccion = "Victor Emilio Estrada y Guayacanes (Urdesa), Ciudad de Guayaquil, Ecuador";
                 string ruc = "1234567890001";
 
                 // Tomar solo el primer producto
@@ -248,6 +270,8 @@ namespace FRECELABK.Repositorio
 
                 // Calcular el total final incluyendo el costo de envío
                 decimal totalFinal = request.Total ;
+
+                decimal valorDescuento = producto.Total - request.SubtotalConDescuento;
 
                 // Generar HTML basado en los datos proporcionados
                 string htmlContent = $@"<!DOCTYPE html>
@@ -307,13 +331,16 @@ namespace FRECELABK.Repositorio
     </table>
 
     <table class='summary'>
-        <tr><td>Subtotal (sin descuento):</td><td>${request.SubtotalSinDescuento:F2}</td></tr>
-        <tr><td>Descuento:</td><td>${request.Descuento:F2}</td></tr>
+        <tr><td>Descuento:</td><td>${valorDescuento:F2}</td></tr>
         <tr><td>Subtotal (con descuento):</td><td>${request.SubtotalConDescuento:F2}</td></tr>
-        <tr><td>IVA (14%):</td><td>${request.Iva:F2}</td></tr>
+        <tr><td>IVA (15%):</td><td>${request.Iva:F2}</td></tr>
         <tr><td>Envío:</td><td>${costoEnvio:F2}</td></tr>
         <tr><td><strong>Total a Pagar:</strong></td><td><strong>${totalFinal:F2}</strong></td></tr>
     </table>
+    <br>
+    <br>
+    <br>
+    <div><strong>Vendedor:</strong> {nombres} {apellidos}</div>
     <br>
     <br>
     <br>
