@@ -2,6 +2,7 @@
 {
     public class EmpleadoDTO
     {
+        public int Id { get; set; }
         public string Cedula { get; set; }
         public string Nombres { get; set; }
         public string Apellidos { get; set; }
@@ -28,6 +29,12 @@
 
         public string Cedula { get; set; }
         public decimal Descuento { get; set; }
+    }
+
+    public class ImagenEmpleado
+    {
+        public int Id { get; set; }
+        public string ImagenData { get; set; }
     }
 
 

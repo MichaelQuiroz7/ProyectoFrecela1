@@ -1,4 +1,5 @@
 ﻿using FRECELABK.Models;
+using FRECELABK.Models.ModelsDTO;
 using Microsoft.EntityFrameworkCore;
 using MySql.Data.MySqlClient;
 
@@ -46,6 +47,51 @@ namespace FRECELABK.Repositorio
                         }
                     }
                     response.Message = "Imágenes obtenidas correctamente";
+                    response.Code = ResponseType.Success;
+                    response.Data = imagenes;
+                }
+                catch (Exception ex)
+                {
+                    response.Data = null;
+                    response.Code = ResponseType.Error;
+                    response.Message = ex.Message;
+                }
+            }
+            return response;
+        }
+
+        #endregion
+
+
+        #region Obtener Imagenes por Empleado
+
+        public async Task<ResponseModel> ObtenerImagenesEmpleado()
+        {
+            ResponseModel response = new ResponseModel();
+            List<ImagenEmpleado> imagenes = new List<ImagenEmpleado>();
+
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+                    string query = "SELECT id, imagen_data FROM imagenesempleado";
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        using (MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                ImagenEmpleado imagen = new ImagenEmpleado
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("id")),
+                                    ImagenData = reader.IsDBNull(reader.GetOrdinal("imagen_data")) ? null : reader.GetString(reader.GetOrdinal("imagen_data"))
+                                };
+                                imagenes.Add(imagen);
+                            }
+                        }
+                    }
+                    response.Message = "Imágenes de empleados obtenidas correctamente";
                     response.Code = ResponseType.Success;
                     response.Data = imagenes;
                 }
@@ -248,6 +294,50 @@ namespace FRECELABK.Repositorio
         }
 
         #endregion
+
+        #region Agregar ImagenEmpleado
+
+        public async Task<ResponseModel> AgregarImagenEmpleado(int idEmpleado, string image)
+        {
+            ResponseModel response = new ResponseModel();
+
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+                {
+                    await connection.OpenAsync();
+                    string query = "INSERT INTO imagenesempleado (id, imagen_data) VALUES (@idImagen, @imagen); SELECT LAST_INSERT_ID();";
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@idImagen", idEmpleado);
+                        command.Parameters.AddWithValue("@imagen", image);
+
+                        var result = await command.ExecuteScalarAsync();
+                        int idImagen = Convert.ToInt32(result);
+
+                        response.Message = "Imagen agregada correctamente";
+                        response.Code = ResponseType.Success;
+                        response.Data = new Imagen
+                        {
+                            IdImagen = idImagen,
+                            IdProducto = idEmpleado,
+                            ImagenUrl = image
+                        };
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Message = "Error: " + ex.Message;
+                response.Code = ResponseType.Error;
+            }
+
+            return response;
+        }
+
+       
+        #endregion
+
 
     }
 }

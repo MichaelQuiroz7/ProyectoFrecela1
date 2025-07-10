@@ -150,7 +150,6 @@ namespace FRECELABK.Controllers
         #endregion
 
 
-
         #region Venta Completa Controlador
 
         [HttpPost("actualizarEstadoVenta")]
@@ -170,6 +169,29 @@ namespace FRECELABK.Controllers
         }
 
         #endregion
+
+
+        #region Ventas por Aprobar
+
+        [HttpGet("ventasXAprobar")]
+        public async Task<IActionResult> pagosxAprobar()
+        {
+            ResponseModel response = await _repositorioVenta.ObtenerComprobantesEnEsperaConDetallesdos();
+            return Ok(response);
+        }
+
+
+        #endregion
+
+
+
+        [HttpGet("ventasxCliente/{cedula}")]
+        public async Task<IActionResult> GetVentasPorCedula(string cedula)
+        {
+            var response = await _repositorioVenta.ObtenerVentasPorCedulaCliente(cedula);
+            return Ok(response);
+        }
+
 
 
     }

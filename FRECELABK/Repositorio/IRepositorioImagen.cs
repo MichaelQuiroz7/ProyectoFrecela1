@@ -10,5 +10,7 @@ namespace FRECELABK.Repositorio
         Task<ResponseModel> AgregarImagen(int idProducto, string image);
         Task<ResponseModel> AgregarImagenes(int idProducto, string image);
         Task<ResponseModel> EliminarImagen(int idImagen);
+        Task<ResponseModel> AgregarImagenEmpleado(int idEmpleado, string image);
+        Task<ResponseModel> ObtenerImagenesEmpleado();
     }
 }

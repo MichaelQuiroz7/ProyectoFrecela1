@@ -20,6 +20,8 @@ namespace FRECELABK.Controllers
             _repository = repositorioImagen;
         }
 
+        #region Obtener Imagenes del Producto
+
         [HttpGet]
         public async Task<ActionResult<ResponseModel>> GetImagenes()
         {
@@ -31,6 +33,10 @@ namespace FRECELABK.Controllers
             return StatusCode(500, response);
         }
 
+        #endregion
+
+
+        #region Subir Imagenes del Producto
 
         [HttpPost("SubirImagen")]
         public async Task<IActionResult> SubirImagen([FromForm] UploadImagenRequest1 request)
@@ -68,6 +74,8 @@ namespace FRECELABK.Controllers
 
 
         }
+
+
 
 
         [HttpPost("SubirImagenes")]
@@ -141,6 +149,62 @@ namespace FRECELABK.Controllers
             }
             return StatusCode(500, response);
         }
+
+        #endregion
+
+
+        #region Subir imagen del Empleado
+
+        [HttpPost("SubirImagenEmpleado")]
+        public async Task<IActionResult> SubirImagenEmpleado([FromForm] UploadImagenRequest1 request)
+        {
+            if (request.Imagen == null || request.Imagen.Length == 0)
+            {
+                return BadRequest("No se recibió ninguna imagen.");
+            }
+
+            var nombreArchivo = $"{Guid.NewGuid()}_{Path.GetFileName(request.Imagen.FileName)}";
+            var rutaCarpeta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads2");
+
+            if (!Directory.Exists(rutaCarpeta))
+            {
+                Directory.CreateDirectory(rutaCarpeta);
+            }
+
+            var rutaCompleta = Path.Combine(rutaCarpeta, nombreArchivo);
+
+            using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+            {
+                await request.Imagen.CopyToAsync(stream);
+            }
+
+            var urlImagen = $"{Request.Scheme}://{Request.Host}/uploads2/{nombreArchivo}";
+
+            var resultado = await _repository.AgregarImagenEmpleado(request.IdProducto, urlImagen);
+
+            return Ok(new
+            {
+                mensaje = "Imagen subida y registrada correctamente",
+                data = resultado.Data
+            });
+        }
+
+        #endregion
+
+
+        #region Obtener Imagenes del Empleado
+
+        [HttpGet("ObtenerImagenesEmpleado")]
+        public async Task<ActionResult<ResponseModel>> GetImagenesEmpleado()
+        {
+            var response = await _repository.ObtenerImagenesEmpleado();
+            
+                return Ok(response);
+      
+        }
+
+        #endregion
+
 
     }
 }

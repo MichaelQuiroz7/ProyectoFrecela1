@@ -40,6 +40,7 @@ namespace FRECELABK.Repositorio
 
                                 EmpleadoDTO empleado = new EmpleadoDTO
                                 {
+                                    Id = reader.GetInt32(reader.GetOrdinal("id_empleado")),
                                     Cedula = reader.GetString(reader.GetOrdinal("cedula")),
                                     Nombres = reader.GetString(reader.GetOrdinal("nombres")),
                                     Apellidos = reader.GetString(reader.GetOrdinal("apellidos")),
@@ -156,9 +157,13 @@ namespace FRECELABK.Repositorio
                 try
                 {
                     await connection.OpenAsync();
+                    //string query = @"
+                    //INSERT INTO empleado (nombres, apellidos, cedula, fecha_nacimiento, genero, id_rol, telefono, contrasenia)
+                    //VALUES (@nombres, @apellidos, @cedula, @fecha_nacimiento, @genero, @id_rol, @telefono, @contrasenia)";
                     string query = @"
-                    INSERT INTO empleado (nombres, apellidos, cedula, fecha_nacimiento, genero, id_rol, telefono, contrasenia)
-                    VALUES (@nombres, @apellidos, @cedula, @fecha_nacimiento, @genero, @id_rol, @telefono, @contrasenia)";
+                INSERT INTO empleado (nombres, apellidos, cedula, fecha_nacimiento, genero, id_rol, telefono, contrasenia)
+                VALUES (@nombres, @apellidos, @cedula, @fecha_nacimiento, @genero, @id_rol, @telefono, @contrasenia);
+                SELECT LAST_INSERT_ID();";
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@nombres", empleado.Nombres);
@@ -170,19 +175,24 @@ namespace FRECELABK.Repositorio
                         command.Parameters.AddWithValue("@id_rol", 2);
                         command.Parameters.AddWithValue("@telefono", empleado.Telefono);
                         command.Parameters.AddWithValue("@contrasenia", empleado.contrasenia);
-                        int rowsAffected = await command.ExecuteNonQueryAsync();
-                        if (rowsAffected > 0)
-                        {
-                            response.Message = "Empleado agregado correctamente";
-                            response.Code = ResponseType.Success;
-                            response.Data = null;
-                        }
-                        else
-                        {
-                            response.Message = "Error al agregar el empleado";
-                            response.Code = ResponseType.Error;
-                            response.Data = null;
-                        }
+
+                        var result = await command.ExecuteScalarAsync();
+                        int newEmployeeId = Convert.ToInt32(result);
+                        response.Message = "Empleado agregado correctamente";
+                        response.Code = ResponseType.Success;
+                        response.Data = new { id = newEmployeeId };
+
+                        //int rowsAffected = await command.ExecuteNonQueryAsync();
+                        //if (rowsAffected > 0)
+                        //{
+                            
+                        //}
+                        //else
+                        //{
+                        //    response.Message = "Error al agregar el empleado";
+                        //    response.Code = ResponseType.Error;
+                        //    response.Data = null;
+                        //}
                     }
                 }
                 catch (Exception ex)

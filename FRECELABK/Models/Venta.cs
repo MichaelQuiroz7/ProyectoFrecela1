@@ -10,6 +10,7 @@ namespace FRECELABK.Models
         public int IdProducto { get; set; }
         public int Cantidad { get; set; }
         public decimal PrecioUnitario { get; set; }
+        public string Observaciones { get; set; } = string.Empty;
 
     }
 
@@ -32,6 +33,7 @@ namespace FRECELABK.Models
         public string? CedulaCliente { get; set; }
         public string? DireccionCliente { get; set; }
         public string? TipoEntrega { get; set; }
+        public string? Observaciones { get; set; } = string.Empty;
     }
 
     public class DetalleVentaConsulta
@@ -49,6 +51,7 @@ namespace FRECELABK.Models
         public string? DireccionCliente { get; set; }
         public string? TipoEntrega { get; set; }
         public string? EstadoEntrega { get; set; } = "PENDIENTE";
+        public string? Observaciones { get; set; } = string.Empty ;
     }
 
 
@@ -104,6 +107,49 @@ namespace FRECELABK.Models
         public string TipoEntrega { get; set; } = "ENTREGA EN LOCAL" ;
         public decimal? CostoEntrega { get; set; }
         public string? Direccion { get; set; }
+    }
+
+
+    public class ComprobanteConsulta
+    {
+        public int IdVenta { get; set; }
+        public string Estado { get; set; }
+        public string ImagenBase64 { get; set; } 
+        public DateTime? Fecha { get; set; } 
+    }
+
+    
+
+    public class ComprobanteConsultados
+    {
+        public string Code { get; set; }
+        public string Message { get; set; }
+        public int IdVenta { get; set; }
+        public string Estado { get; set; }
+        public string ImagenBase64 { get; set; }
+        public DateTime? Fecha { get; set; }
+        public string NombreProducto { get; set; }
+        public string DescripcionProducto { get; set; }
+        public decimal? PrecioUnitario { get; set; }
+        public int? Cantidad { get; set; }
+        public decimal? PrecioTotal { get; set; }
+        public string NombresCliente { get; set; }
+        public string ApellidosCliente { get; set; }
+        public string CedulaCliente { get; set; }
+        public string DireccionCliente { get; set; }
+        public string TipoEntrega { get; set; }
+        public string Observaciones { get; set; }
+    }
+
+
+    public class SaleDetails
+    {
+        public int IdVenta { get; set; }
+        public string NombreProducto { get; set; }
+        public int Cantidad { get; set; }
+        public decimal PrecioTotal { get; set; }
+        public DateTime Fecha { get; set; }
+        public string Estado { get; set; } 
     }
 
 
