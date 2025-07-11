@@ -393,7 +393,7 @@ namespace FRECELABK.Repositorio
 
     <div class='client-info'>
         <strong>Cliente:</strong> {request.Cliente}<br>
-        <strong>Cédula:</strong> {request.Cedula}<br>
+        <strong>Celular:</strong> {request.Cedula}<br>
         <strong>Fecha:</strong> {request.Fecha}<br>
         <strong>Tipo de entrega:</strong> {tipoEntrega}<br>
     </div>
@@ -547,7 +547,7 @@ namespace FRECELABK.Repositorio
                     string updateVentaQuery = @"
     UPDATE venta 
     SET estado = 'ESPERA'
-    WHERE id_venta = @idVenta AND estado = 'PENDIENTE'";
+    WHERE id_venta = @idVenta";
 
 
                     using (MySqlCommand updateVentaCommand = new MySqlCommand(updateVentaQuery, connection, transaction))
@@ -761,7 +761,7 @@ namespace FRECELABK.Repositorio
                 List<DetalleVentaConsulta> detallesVentas = new List<DetalleVentaConsulta>();
                 foreach (var (idVenta, estado) in ventasIds)
                 {
-                    // Fix for CS1955: Replace the incorrect usage of BitConverter with the correct method to convert an integer to a Base64 string.
+                    
                     string idVentaBase64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(idVenta.ToString()));
 
                     using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
@@ -1014,9 +1014,9 @@ namespace FRECELABK.Repositorio
                             {
                                 int idVenta = reader.GetInt32("id_venta");
                                 string estado = reader.GetString("estado");
-                                byte[] imagenBytes = reader["imagen"] as byte[] ?? new byte[0]; // Maneja NULL como array vacío
+                                byte[] imagenBytes = reader["imagen"] as byte[] ?? new byte[0]; 
                                 string imagenBase64 = Convert.ToBase64String(imagenBytes);
-                                DateTime? fecha = reader["fecha"] as DateTime?; // Maneja NULL como nullable
+                                DateTime? fecha = reader["fecha"] as DateTime?; 
 
                                 ComprobanteConsulta comprobante = new ComprobanteConsulta
                                 {
@@ -1091,7 +1091,7 @@ namespace FRECELABK.Repositorio
                                 string estado = reader.GetString("estado");
                                 byte[] imagenBytes = reader["imagen"] as byte[] ?? new byte[0]; 
                                 string imagenBase64 = Convert.ToBase64String(imagenBytes);
-                                DateTime? fecha = reader["fecha"] as DateTime?; // Maneja NULL como nullable
+                                DateTime? fecha = reader["fecha"] as DateTime?; 
 
                                 // Paso 2: Obtener detalles adicionales usando el stored procedure
                                 string idVentaBase64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(idVenta.ToString()));
@@ -1218,6 +1218,57 @@ namespace FRECELABK.Repositorio
             return response;
         }
 
+
+        public async Task<ResponseModel> ObtenerIdsVentasBase64()
+        {
+            ResponseModel response = new ResponseModel();
+            List<string> idsBase64 = new List<string>();
+
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+                    string query = "SELECT TO_BASE64(CAST(id_venta AS CHAR)) AS id_venta_base64 " +
+                                  "FROM venta " +
+                                  "WHERE estado NOT IN ('RECHAZADO', 'ESPERA') " +
+                                  "ORDER BY id_venta DESC;";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                string idBase64 = reader.GetString("id_venta_base64");
+                                idsBase64.Add(idBase64);
+                            }
+
+                            if (idsBase64.Count > 0)
+                            {
+                                response.Message = "IDs de ventas obtenidos correctamente";
+                                response.Code = ResponseType.Success;
+                                response.Data = idsBase64;
+                            }
+                            else
+                            {
+                                response.Message = "No se encontraron ventas con los criterios especificados";
+                                response.Code = ResponseType.Error;
+                                response.Data = null;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    response.Data = null;
+                    response.Code = ResponseType.Error;
+                    response.Message = $"Error al obtener los IDs de ventas: {ex.Message}";
+                }
+            }
+
+            return response;
+        }
 
     }
 

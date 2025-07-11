@@ -17,6 +17,7 @@ namespace FRECELABK.Repositorio
         Task<ResponseModel> ObtenerComprobantesEnEsperaConDetalles();
         Task<ResponseModel> ObtenerComprobantesEnEsperaConDetallesdos();
         Task<ResponseModel> ObtenerVentasPorCedulaCliente(string cedula);
+        Task<ResponseModel> ObtenerIdsVentasBase64();
 
 
     }

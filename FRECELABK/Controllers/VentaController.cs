@@ -76,7 +76,6 @@ namespace FRECELABK.Controllers
                     imageBytes = memoryStream.ToArray();
                 }
 
-                // Crear objeto Comprobante
                 var comprobante = new Comprobante
                 {
                     IdVenta = model.IdVenta,
@@ -94,7 +93,6 @@ namespace FRECELABK.Controllers
             }
             catch (Exception ex)
             {
-                // Manejo de error global
                 return StatusCode(500, new ResponseModel
                 {
                     Code = ResponseType.Error,
@@ -189,6 +187,17 @@ namespace FRECELABK.Controllers
         public async Task<IActionResult> GetVentasPorCedula(string cedula)
         {
             var response = await _repositorioVenta.ObtenerVentasPorCedulaCliente(cedula);
+            return Ok(response);
+        }
+
+
+
+
+
+        [HttpGet("ventasIdsBase64")]
+        public async Task<IActionResult> ObtenerIdsVentasBase64()
+        {
+            ResponseModel response = await _repositorioVenta.ObtenerIdsVentasBase64();
             return Ok(response);
         }
 
