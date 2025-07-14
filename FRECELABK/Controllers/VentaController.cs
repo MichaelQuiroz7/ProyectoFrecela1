@@ -183,6 +183,8 @@ namespace FRECELABK.Controllers
 
 
 
+        #region Obtener Ventas por Clientes
+
         [HttpGet("ventasxCliente/{cedula}")]
         public async Task<IActionResult> GetVentasPorCedula(string cedula)
         {
@@ -190,9 +192,11 @@ namespace FRECELABK.Controllers
             return Ok(response);
         }
 
+        #endregion
 
 
 
+        #region Obtener id base de64 de las ventas
 
         [HttpGet("ventasIdsBase64")]
         public async Task<IActionResult> ObtenerIdsVentasBase64()
@@ -200,6 +204,36 @@ namespace FRECELABK.Controllers
             ResponseModel response = await _repositorioVenta.ObtenerIdsVentasBase64();
             return Ok(response);
         }
+
+        #endregion
+
+
+        #region Obtener Ventas por Empleado
+
+        [HttpGet("ventasxEmpleado/{cedula}")]
+        public async Task<IActionResult> GetVentasPorCedulaEmpleado(string cedula)
+        {
+            var response = await _repositorioVenta.ObtenerVentasPorCedulaEmpleado(cedula);
+            return Ok(response);
+        }
+
+        #endregion
+
+
+        #region Ingresar venta por empleado
+
+        [HttpPost("ingresar")]
+        public async Task<IActionResult> IngresarVenta([FromBody] IngresarVentaRequest request)
+        {
+            var response = await _repositorioVenta.IngresarVentaEmpleado(request);
+            if (response.Code == ResponseType.Success)
+            {
+                return Ok(response);
+            }
+            return BadRequest(response);
+        }
+
+        #endregion
 
 
 

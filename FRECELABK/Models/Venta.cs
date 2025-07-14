@@ -153,4 +153,19 @@ namespace FRECELABK.Models
     }
 
 
+    public class IngresarVentaRequest
+    {
+        public string CedulaCliente { get; set; }
+        public string CedulaEmpleado { get; set; }
+        public string Fecha { get; set; }
+        public string Hora { get; set; }
+        public int IdProducto { get; set; }
+        public decimal PrecioUnitario { get; set; }
+        public int Cantidad { get; set; }
+        public decimal PrecioTotal { get; set; }
+        public string Estado { get; set; }
+        public decimal Descuento { get; set; }
+    }
+
+
 }

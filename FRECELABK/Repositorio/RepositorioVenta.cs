@@ -1058,6 +1058,8 @@ namespace FRECELABK.Repositorio
         #endregion
 
 
+        #region Obtener Comprobantes en Espera con Detalles
+
         public async Task<ResponseModel> ObtenerComprobantesEnEsperaConDetallesdos()
         {
             ResponseModel response = new ResponseModel();
@@ -1146,7 +1148,67 @@ namespace FRECELABK.Repositorio
             return response;
         }
 
+        #endregion
 
+
+        #region Obtener IDs de Ventas en Base64
+
+        public async Task<ResponseModel> ObtenerIdsVentasBase64()
+        {
+            ResponseModel response = new ResponseModel();
+            List<string> idsBase64 = new List<string>();
+
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+                    string query =  "SELECT CONCAT( TO_BASE64(CAST(v.id_venta AS CHAR) ), '|', ' ',c.nombres, ' ', c.apellidos) AS resultado " +
+                                    "FROM venta v " +
+                                    "JOIN cliente c ON v.id_cliente = c.id_cliente " +
+                                    "WHERE v.estado NOT IN('RECHAZADO', 'ESPERA', 'COMPLETADA') " +
+                                    "ORDER BY v.id_venta DESC; ";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                string idBase64 = reader.GetString("resultado");
+                                idsBase64.Add(idBase64);
+                            }
+
+                            if (idsBase64.Count > 0)
+                            {
+                                response.Message = "IDs de ventas obtenidos correctamente";
+                                response.Code = ResponseType.Success;
+                                response.Data = idsBase64;
+                            }
+                            else
+                            {
+                                response.Message = "No se encontraron ventas con los criterios especificados";
+                                response.Code = ResponseType.Error;
+                                response.Data = null;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    response.Data = null;
+                    response.Code = ResponseType.Error;
+                    response.Message = $"Error al obtener los IDs de ventas: {ex.Message}";
+                }
+            }
+
+            return response;
+        }
+
+        #endregion
+
+
+        #region Obtener Ventas por Cédula del Cliente
 
         public async Task<ResponseModel> ObtenerVentasPorCedulaCliente(string cedula)
         {
@@ -1187,7 +1249,7 @@ namespace FRECELABK.Repositorio
                                     Cantidad = reader.GetInt32("cantidad"),
                                     PrecioTotal = reader.GetDecimal("precio_total"),
                                     Fecha = reader.GetDateTime("fecha"),
-                                    Estado = reader.GetString("estado") 
+                                    Estado = reader.GetString("estado")
                                 };
                                 ventas.Add(venta);
                             }
@@ -1218,57 +1280,207 @@ namespace FRECELABK.Repositorio
             return response;
         }
 
+        #endregion
 
-        public async Task<ResponseModel> ObtenerIdsVentasBase64()
+
+        #region Obtener Ventas por Cédula del Empleado
+
+        public async Task<ResponseModel> ObtenerVentasPorCedulaEmpleado(string cedula)
         {
             ResponseModel response = new ResponseModel();
-            List<string> idsBase64 = new List<string>();
+            List<SaleDetails> ventas = new List<SaleDetails>();
 
-            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            try
             {
-                try
+                using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
                 {
                     await connection.OpenAsync();
-                    string query = "SELECT TO_BASE64(CAST(id_venta AS CHAR)) AS id_venta_base64 " +
-                                  "FROM venta " +
-                                  "WHERE estado NOT IN ('RECHAZADO', 'ESPERA') " +
-                                  "ORDER BY id_venta DESC;";
+
+                    string query = @"
+            SELECT 
+                v.id_venta,
+                p.nombre AS nombreProducto,
+                v.cantidad,
+                v.precio_total,
+                v.fecha,
+                v.estado
+            FROM venta v
+            INNER JOIN empleado e ON v.id_empleado = e.id_empleado
+            INNER JOIN producto p ON v.id_producto = p.id_producto
+            WHERE e.cedula = @Cedula AND v.estado NOT IN ('RECHAZADO', 'COMPLETADA')";
 
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
-                        using (var reader = await command.ExecuteReaderAsync())
+                        command.Parameters.AddWithValue("@Cedula", cedula);
+
+                        using (MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync())
                         {
                             while (await reader.ReadAsync())
                             {
-                                string idBase64 = reader.GetString("id_venta_base64");
-                                idsBase64.Add(idBase64);
-                            }
-
-                            if (idsBase64.Count > 0)
-                            {
-                                response.Message = "IDs de ventas obtenidos correctamente";
-                                response.Code = ResponseType.Success;
-                                response.Data = idsBase64;
-                            }
-                            else
-                            {
-                                response.Message = "No se encontraron ventas con los criterios especificados";
-                                response.Code = ResponseType.Error;
-                                response.Data = null;
+                                SaleDetails venta = new SaleDetails
+                                {
+                                    IdVenta = reader.GetInt32("id_venta"),
+                                    NombreProducto = reader.GetString("nombreProducto"),
+                                    Cantidad = reader.GetInt32("cantidad"),
+                                    PrecioTotal = reader.GetDecimal("precio_total"),
+                                    Fecha = reader.GetDateTime("fecha"),
+                                    Estado = reader.GetString("estado")
+                                };
+                                ventas.Add(venta);
                             }
                         }
                     }
                 }
-                catch (Exception ex)
+
+                if (ventas.Any())
                 {
-                    response.Data = null;
-                    response.Code = ResponseType.Error;
-                    response.Message = $"Error al obtener los IDs de ventas: {ex.Message}";
+                    response.Message = "Ventas obtenidas correctamente";
+                    response.Code = ResponseType.Success;
+                    response.Data = ventas;
                 }
+                else
+                {
+                    response.Message = $"No se encontraron ventas para el empleado con cédula {cedula}";
+                    response.Code = ResponseType.Success;
+                    response.Data = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Data = null;
+                response.Code = ResponseType.Error;
+                response.Message = $"Error al obtener las ventas: {ex.Message}";
             }
 
             return response;
         }
+
+        #endregion
+
+
+
+        #region Ingresar venta Empleado
+
+        public async Task<ResponseModel> IngresarVentaEmpleado(IngresarVentaRequest request)
+        {
+            ResponseModel response = new ResponseModel();
+
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+                {
+                    await connection.OpenAsync();
+
+                    // Validar cédula del cliente
+                    string queryCliente = "SELECT id_cliente FROM cliente WHERE cedula = @CedulaCliente";
+                    int idCliente;
+                    using (MySqlCommand commandCliente = new MySqlCommand(queryCliente, connection))
+                    {
+                        commandCliente.Parameters.AddWithValue("@CedulaCliente", request.CedulaCliente);
+                        var result = await commandCliente.ExecuteScalarAsync();
+                        if (result == null)
+                        {
+                            response.Message = $"No se encontró un cliente con cédula {request.CedulaCliente}";
+                            response.Code = ResponseType.Error;
+                            response.Data = null;
+                            return response;
+                        }
+                        idCliente = Convert.ToInt32(result);
+                    }
+
+                    // Validar cédula del empleado
+                    string queryEmpleado = "SELECT id_empleado FROM empleado WHERE cedula = @CedulaEmpleado";
+                    int idEmpleado;
+                    using (MySqlCommand commandEmpleado = new MySqlCommand(queryEmpleado, connection))
+                    {
+                        commandEmpleado.Parameters.AddWithValue("@CedulaEmpleado", request.CedulaEmpleado);
+                        var result = await commandEmpleado.ExecuteScalarAsync();
+                        if (result == null)
+                        {
+                            response.Message = $"No se encontró un empleado con cédula {request.CedulaEmpleado}";
+                            response.Code = ResponseType.Error;
+                            response.Data = null;
+                            return response;
+                        }
+                        idEmpleado = Convert.ToInt32(result);
+                    }
+
+                    // Validar existencia del producto y stock
+                    string queryProducto = "SELECT stock FROM producto WHERE id_producto = @IdProducto";
+                    int stock;
+                    using (MySqlCommand commandProducto = new MySqlCommand(queryProducto, connection))
+                    {
+                        commandProducto.Parameters.AddWithValue("@IdProducto", request.IdProducto);
+                        var result = await commandProducto.ExecuteScalarAsync();
+                        if (result == null)
+                        {
+                            response.Message = $"No se encontró un producto con ID {request.IdProducto}";
+                            response.Code = ResponseType.Error;
+                            response.Data = null;
+                            return response;
+                        }
+                        stock = Convert.ToInt32(result);
+                        if (stock < request.Cantidad)
+                        {
+                            response.Message = $"Stock insuficiente para el producto con ID {request.IdProducto}. Stock disponible: {stock}";
+                            response.Code = ResponseType.Error;
+                            response.Data = null;
+                            return response;
+                        }
+                    }
+
+                    // Insertar la venta
+                    string query = @"
+                INSERT INTO venta (
+                    id_cliente, id_empleado, fecha, hora, id_producto, cantidad, 
+                    precio_unitario, precio_total, estado, descuento
+                ) VALUES (
+                    @IdCliente, @IdEmpleado, @Fecha, @Hora, @IdProducto, @Cantidad, 
+                    @PrecioUnitario, @PrecioTotal, @Estado, @Descuento
+                )";
+
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@IdCliente", idCliente);
+                        command.Parameters.AddWithValue("@IdEmpleado", idEmpleado);
+                        command.Parameters.AddWithValue("@Fecha", request.Fecha);
+                        command.Parameters.AddWithValue("@Hora", request.Hora);
+                        command.Parameters.AddWithValue("@IdProducto", request.IdProducto);
+                        command.Parameters.AddWithValue("@Cantidad", request.Cantidad);
+                        command.Parameters.AddWithValue("@PrecioUnitario", request.PrecioUnitario);
+                        command.Parameters.AddWithValue("@PrecioTotal", request.PrecioTotal);
+                        command.Parameters.AddWithValue("@Estado", request.Estado);
+                        command.Parameters.AddWithValue("@Descuento", request.Descuento / 100); // Convertir porcentaje a decimal
+
+                        await command.ExecuteNonQueryAsync();
+                    }
+
+                    // Actualizar stock del producto
+                    string updateStockQuery = "UPDATE producto SET stock = stock - @Cantidad WHERE id_producto = @IdProducto";
+                    using (MySqlCommand updateCommand = new MySqlCommand(updateStockQuery, connection))
+                    {
+                        updateCommand.Parameters.AddWithValue("@Cantidad", request.Cantidad);
+                        updateCommand.Parameters.AddWithValue("@IdProducto", request.IdProducto);
+                        await updateCommand.ExecuteNonQueryAsync();
+                    }
+
+                    response.Message = "Venta registrada correctamente";
+                    response.Code = ResponseType.Success;
+                    response.Data = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error al registrar la venta: {ex.Message}";
+                response.Code = ResponseType.Error;
+                response.Data = null;
+            }
+
+            return response;
+        }
+
+        #endregion
+
 
     }
 
