@@ -27,7 +27,7 @@ namespace FRECELABK.Repositorio
                 try
                 {
                     await connection.OpenAsync();
-                    string query = "SELECT id_empleado, nombres, apellidos, cedula, fecha_nacimiento, genero, id_rol, telefono, contrasenia FROM empleado";
+                    string query = "SELECT id_empleado, nombres, apellidos, cedula, fecha_nacimiento, genero, id_rol, telefono, contrasenia FROM empleado where estado = 1";
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
                         using (MySqlDataReader reader = (MySqlDataReader)await command.ExecuteReaderAsync())
@@ -296,6 +296,51 @@ namespace FRECELABK.Repositorio
 
         #endregion
 
+
+
+        #region Eliminar empleado
+
+        public async Task<ResponseModel>  eliminarEmpleados( int idempleado)
+        {
+            ResponseModel response = new ResponseModel();
+
+            using (MySqlConnection connection = new MySqlConnection(cadenaConexion))
+            {
+
+                try
+                {
+                    await connection.OpenAsync();
+                    string query = @"update empleado set estado = 0 where id_empleado = @idempleado ;";
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@idempleado", idempleado);
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+                        if (rowsAffected > 0)
+                        {
+                            response.Message = "Empleado eliminado correctamente";
+                            response.Code = ResponseType.Success;
+                            response.Data = null;
+                        }
+                        else
+                        {
+                            response.Message = "Error al eliminar el empleado";
+                            response.Code = ResponseType.Error;
+                            response.Data = null;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    response.Data = null;
+                    response.Code = ResponseType.Error;
+                    response.Message = ex.Message;
+                }
+
+            }
+            return response;
+        }
+
+        #endregion
 
     }
 }

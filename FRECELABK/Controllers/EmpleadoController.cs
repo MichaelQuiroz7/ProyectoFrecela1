@@ -73,6 +73,18 @@ namespace FRECELABK.Controllers
         }
 
 
+        [HttpPut("EliminarEmpleado")]
+        public async Task<ActionResult<ResponseModel>> EliminarEmpleado( [FromBody]int idempleado)
+        {
+            if (idempleado <= 0)
+            {
+                return BadRequest("ID de empleado no puede ser menor o igual a cero");
+            }
+            ResponseModel response = await _repository.eliminarEmpleados(idempleado);
+            return Ok(response);
+        }
+
+
 
     }
 

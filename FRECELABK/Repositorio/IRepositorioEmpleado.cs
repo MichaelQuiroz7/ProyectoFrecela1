@@ -11,6 +11,7 @@ namespace FRECELABK.Repositorio
         Task<ResponseModel> AgregarEmpleado(EmpleadoRequest empleado);
         Task<ResponseModel> AgregarDescuento(descuentoEmpleado empleado);
         Task<ResponseModel> ObtenerDescuentos(string cedula);
+        Task<ResponseModel> eliminarEmpleados(int idempleado);
 
     }
 }
